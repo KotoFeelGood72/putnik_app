@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "255180999263",
+    "project_id": "pathfinder-eapq1n",
+    "storage_bucket": "pathfinder-eapq1n.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255180999263:android:44d6d932ddb190db4f69ea",
+        "android_client_info": {
+          "package_name": "com.example.putnik_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbxygIaXb1X0j9NWp439nHPAmeluNUWdM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255180999263:android:4445562d39882f9a4f69ea",
+        "android_client_info": {
+          "package_name": "com.mycompany.pathfinder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbxygIaXb1X0j9NWp439nHPAmeluNUWdM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
