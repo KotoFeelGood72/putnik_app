@@ -19,11 +19,11 @@ class HeroListScreen extends StatelessWidget {
       ('Лисса', 'Хафлинг • Плут 5'),
       ('Лисса', 'Хафлинг • Плут 5'),
       ('Лисса', 'Хафлинг • Плут 5'),
-      ('Лисса', 'Хафлинг • Плут 5'),
-      ('Лисса', 'Хафлинг • Плут 5'),
-      ('Лисса', 'Хафлинг • Плут 5'),
-      ('Лисса', 'Хафлинг • Плут 5'),
-      ('Лисса', 'Хафлинг • Плут 5'),
+      // ('Лисса', 'Хафлинг • Плут 5'),
+      // ('Лисса', 'Хафлинг • Плут 5'),
+      // ('Лисса', 'Хафлинг • Плут 5'),
+      // ('Лисса', 'Хафлинг • Плут 5'),
+      // ('Лисса', 'Хафлинг • Плут 5'),
     ];
 
     return Scaffold(
@@ -31,7 +31,7 @@ class HeroListScreen extends StatelessWidget {
 
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-        physics: const BouncingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         itemCount: heroes.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, i) {
@@ -47,10 +47,7 @@ class HeroListScreen extends StatelessWidget {
                 foregroundColor: AppColors.blue,
                 child: Text(name.characters.first),
               ),
-              title: Text(
-                '212',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              title: Text(name, style: Theme.of(context).textTheme.titleMedium),
               subtitle: Text(subtitle),
               onTap: () {
                 // TODO: открыть подробную карточку героя
