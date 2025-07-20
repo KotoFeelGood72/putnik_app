@@ -6,25 +6,43 @@ class NewAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback? onBack;
   final List<Widget>? actions;
+  final bool showBackButton;
 
-  const NewAppBar({super.key, required this.title, this.onBack, this.actions});
+  const NewAppBar({
+    super.key,
+    required this.title,
+    this.onBack,
+    this.actions,
+    this.showBackButton = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: false,
-      leading: IconButton(
-        icon: IconWidget(iconName: 'back', size: 34, color: AppColors.black),
-        onPressed: onBack ?? () => Navigator.of(context).pop(),
+      centerTitle: true,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(gradient: AppColors.appBarGradient),
       ),
+      leading:
+          showBackButton
+              ? IconButton(
+                icon: IconWidget(
+                  iconName: 'back',
+                  size: 34,
+                  color: AppColors.white,
+                ),
+                onPressed: onBack ?? () => Navigator.of(context).pop(),
+              )
+              : null,
       title: Text(
         title,
         style: const TextStyle(
-          color: AppColors.black,
+          color: AppColors.white,
           fontSize: 22,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
         ),
       ),
       actions: actions,

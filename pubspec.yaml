@@ -26,15 +26,20 @@ dependencies:
   intl: ^0.20.2
   dotted_border: ^2.1.0
   image_picker: ^1.1.2
+  shared_preferences: ^2.2.2
+  numberpicker: ^2.1.2
+  flutter_slidable: ^3.1.0
+  webview_flutter: ^4.7.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  # hive_generator и build_runner удалены
 flutter:
   uses-material-design: true
   assets:
-    # - assets/icons/
+    - assets/icons/
     - assets/images/
 
 flutter_native_splash:

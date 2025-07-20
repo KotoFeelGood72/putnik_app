@@ -2,8 +2,7 @@
 
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:putnik_app/present/routes/app_router.gr.dart';
-
+import 'package:putnik_app/present/routes/app_router.dart';
 
 /// Только для авторизованных
 class AuthGuard extends AutoRouteGuard {

@@ -7,39 +7,59 @@ import 'package:intl/intl.dart';
 import 'package:putnik_app/firebase_options.dart';
 import 'package:putnik_app/guards/auth_guard.dart';
 import 'package:putnik_app/present/routes/app_router.dart';
-import 'package:putnik_app/present/theme/app_colors.dart';
-import 'package:putnik_app/present/theme/text_themes.dart';
+import 'package:putnik_app/present/theme/app_themes.dart';
 
 final getIt = GetIt.instance;
 final String locale = Intl.getCurrentLocale();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await initializeDateFormatting('ru_RU');
+
+  try {
+    // Инициализация Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+    // Продолжаем работу без Firebase
+  }
+
+  try {
+    await initializeDateFormatting('ru_RU');
+    print('Date formatting initialized successfully');
+  } catch (e) {
+    print('Date formatting initialization failed: $e');
+    // Продолжаем работу без локализации дат
+  }
+
   final authGuard = AuthGuard();
   final guestGuard = GuestGuard();
 
   getIt.registerSingleton<AppRouter>(
     AppRouter(authGuard: authGuard, guestGuard: guestGuard),
   );
+
   runApp(ProviderScope(child: TeenseApp()));
 }
 
 class TeenseApp extends StatelessWidget {
   const TeenseApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final appRouter = getIt<AppRouter>();
     return MaterialApp.router(
-      theme: ThemeData(
-        fontFamily: 'EuclidCircularA',
-        textTheme: buildTextTheme(),
-        scaffoldBackgroundColor: AppColors.white,
-      ),
+      theme: FantasyTheme.theme,
       debugShowCheckedModeBanner: false,
-
       routerConfig: appRouter.config(navigatorObservers: () => []),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+          child: child!,
+        );
+      },
     );
   }
 }

@@ -25,4 +25,7 @@ abstract class AuthService {
 
   /// Выход
   Future<void> logout();
+
+  /// Удаление аккаунта
+  Future<void> deleteAccount();
 }

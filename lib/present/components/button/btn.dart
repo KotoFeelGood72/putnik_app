@@ -27,7 +27,7 @@ class Btn extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 32),
           backgroundColor:
-              isDisabled ? AppColors.blue.withOpacity(0.5) : AppColors.blue,
+              isDisabled ? AppColors.accent.withOpacity(0.5) : AppColors.accent,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
         ),
         onPressed: isDisabled ? null : onPressed,

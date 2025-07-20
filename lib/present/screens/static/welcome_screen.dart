@@ -1,7 +1,8 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:putnik_app/present/components/button/btn.dart';
-import 'package:putnik_app/present/routes/app_router.gr.dart';
+import 'package:putnik_app/present/routes/app_router.dart';
+
 import 'package:putnik_app/present/theme/app_colors.dart';
 
 @RoutePage()
