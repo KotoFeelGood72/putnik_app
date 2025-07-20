@@ -23,17 +23,9 @@ class _HeroListScreenState extends State<HeroListScreen> {
   List<HeroModel> filteredHeroes = [];
   bool isLoading = true;
 
-  // Поиск и фильтрация
+  // Для поиска
   final TextEditingController _searchController = TextEditingController();
-  String _selectedRace = 'Все расы';
-  String _selectedClass = 'Все классы';
-  String _selectedLevel = 'Все уровни';
-  bool _isSearchExpanded = false;
-
-  // Списки для фильтров
-  List<String> races = ['Все расы'];
-  List<String> classes = ['Все классы'];
-  List<String> levels = ['Все уровни'];
+  bool _isSearchActive = false;
 
   @override
   void initState() {
@@ -46,6 +38,22 @@ class _HeroListScreenState extends State<HeroListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _filterHeroes() {
+    final query = _searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      setState(() {
+        filteredHeroes = List.from(heroes);
+      });
+    } else {
+      setState(() {
+        filteredHeroes =
+            heroes
+                .where((hero) => hero.name.toLowerCase().contains(query))
+                .toList();
+      });
+    }
   }
 
   Future<void> _loadHeroes() async {
@@ -63,69 +71,14 @@ class _HeroListScreenState extends State<HeroListScreen> {
                 .get();
         heroes =
             snapshot.docs.map((doc) => HeroModel.fromJson(doc.data())).toList();
-
-        // Обновляем списки для фильтров
-        _updateFilterLists();
       }
     } catch (e) {
       heroes = [];
     }
     setState(() {
       isLoading = false;
-      _filterHeroes();
+      filteredHeroes = List.from(heroes);
     });
-  }
-
-  void _updateFilterLists() {
-    // Обновляем списки для фильтров
-    final heroRaces = heroes.map((h) => h.race).toSet().toList()..sort();
-    final heroClasses =
-        heroes.map((h) => h.characterClass).toSet().toList()..sort();
-    final heroLevels = heroes.map((h) => h.level).toSet().toList()..sort();
-
-    setState(() {
-      races = ['Все расы', ...heroRaces];
-      classes = ['Все классы', ...heroClasses];
-      levels = ['Все уровни', ...heroLevels];
-    });
-  }
-
-  void _filterHeroes() {
-    final searchQuery = _searchController.text.toLowerCase();
-
-    filteredHeroes =
-        heroes.where((hero) {
-          // Поиск по имени
-          final matchesSearch = hero.name.toLowerCase().contains(searchQuery);
-
-          // Фильтр по расе
-          final matchesRace =
-              _selectedRace == 'Все расы' || hero.race == _selectedRace;
-
-          // Фильтр по классу
-          final matchesClass =
-              _selectedClass == 'Все классы' ||
-              hero.characterClass == _selectedClass;
-
-          // Фильтр по уровню
-          final matchesLevel =
-              _selectedLevel == 'Все уровни' || hero.level == _selectedLevel;
-
-          return matchesSearch && matchesRace && matchesClass && matchesLevel;
-        }).toList();
-
-    setState(() {});
-  }
-
-  void _resetFilters() {
-    setState(() {
-      _searchController.clear();
-      _selectedRace = 'Все расы';
-      _selectedClass = 'Все классы';
-      _selectedLevel = 'Все уровни';
-      _isSearchExpanded = false;
-    });
-    _filterHeroes();
   }
 
   Future<void> _deleteHero(HeroModel hero) async {
@@ -175,369 +128,226 @@ class _HeroListScreenState extends State<HeroListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Мои персонажи', style: TextStyle(fontSize: 18)),
-        actions: [
-          // Поиск
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _isSearchExpanded = !_isSearchExpanded;
-                if (!_isSearchExpanded) {
-                  _searchController.clear();
-                  _filterHeroes();
-                }
-              });
-            },
-            icon: Icon(
-              _isSearchExpanded ? Icons.close : Icons.search,
-              color: Colors.white,
-              size: 20,
-            ),
-            tooltip: 'Поиск персонажей',
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text('Мои персонажи', style: TextStyle(fontSize: 18)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.search, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    _isSearchActive = true;
+                  });
+                },
+                tooltip: 'Поиск',
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Поиск
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: _isSearchExpanded ? 60 : 0,
-            child:
-                _isSearchExpanded
-                    ? Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+          body:
+              isLoading
+                  ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                  : filteredHeroes.isEmpty
+                  ? RefreshIndicator(
+                    onRefresh: _loadHeroes,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.surface,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height - 200,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.sentiment_dissatisfied,
+                                      size: 64,
+                                      color: Colors.white.withOpacity(0.7),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      heroes.isEmpty
+                                          ? 'Нет созданных персонажей'
+                                          : 'Персонажи не найдены',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      heroes.isEmpty
+                                          ? 'Создайте своего первого героя'
+                                          : 'Попробуйте изменить параметры поиска',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  : RefreshIndicator(
+                    onRefresh: _loadHeroes,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.surface,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ListView.separated(
+                              itemCount: filteredHeroes.length,
+                              separatorBuilder:
+                                  (_, __) => const SizedBox(height: 16),
+                              itemBuilder: (context, index) {
+                                final hero = filteredHeroes[index];
+                                return _buildHeroCard(hero);
+                              },
+                            ),
+                          ),
+                          // Кнопка добавления персонажа
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(top: 16),
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const CreateHeroScreen(),
+                                  ),
+                                );
+                                await _loadHeroes();
+                              },
+                              icon: const Icon(
+                                Icons.add,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              label: const Text(
+                                'Создать персонажа',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 4,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: TextField(
-                        controller: _searchController,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: 'Поиск персонажей...',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.white,
-                          ),
-                          suffixIcon:
-                              _searchController.text.isNotEmpty
-                                  ? IconButton(
-                                    icon: const Icon(
-                                      Icons.clear,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _filterHeroes();
-                                    },
-                                  )
-                                  : null,
-                          filled: true,
-                          fillColor: AppColors.primary.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    )
-                    : null,
-          ),
-
-          // Фильтры
-          Container(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildFilterDropdown(
-                        value: _selectedRace,
-                        items: races,
-                        label: 'Раса',
-                        onChanged: (value) {
-                          setState(() => _selectedRace = value!);
-                          _filterHeroes();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildFilterDropdown(
-                        value: _selectedClass,
-                        items: classes,
-                        label: 'Класс',
-                        onChanged: (value) {
-                          setState(() => _selectedClass = value!);
-                          _filterHeroes();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildFilterDropdown(
-                        value: _selectedLevel,
-                        items: levels,
-                        label: 'Уровень',
-                        onChanged: (value) {
-                          setState(() => _selectedLevel = value!);
-                          _filterHeroes();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Кнопка сброса фильтров
-                if (_selectedRace != 'Все расы' ||
-                    _selectedClass != 'Все классы' ||
-                    _selectedLevel != 'Все уровни' ||
-                    _searchController.text.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: TextButton.icon(
-                      onPressed: _resetFilters,
-                      icon: const Icon(
-                        Icons.clear_all,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      label: const Text(
-                        'Сбросить фильтры',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppColors.primary.withOpacity(0.3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
                     ),
                   ),
-              ],
-            ),
-          ),
-
-          // Список персонажей
-          Expanded(
-            child:
-                isLoading
-                    ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    )
-                    : filteredHeroes.isEmpty
-                    ? RefreshIndicator(
-                      onRefresh: _loadHeroes,
-                      color: AppColors.primary,
-                      backgroundColor: AppColors.surface,
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height - 300,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Icon(
-                                        Icons.sentiment_dissatisfied,
-                                        size: 64,
-                                        color: Colors.white.withOpacity(0.7),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        heroes.isEmpty
-                                            ? 'Нет созданных персонажей'
-                                            : 'Персонажи не найдены',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        heroes.isEmpty
-                                            ? 'Создайте своего первого героя'
-                                            : 'Попробуйте изменить параметры поиска',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.7),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                    : RefreshIndicator(
-                      onRefresh: _loadHeroes,
-                      color: AppColors.primary,
-                      backgroundColor: AppColors.surface,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 20,
-                        ),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: ListView.separated(
-                                itemCount: filteredHeroes.length,
-                                separatorBuilder:
-                                    (_, __) => const SizedBox(height: 16),
-                                itemBuilder: (context, index) {
-                                  final hero = filteredHeroes[index];
-                                  return _buildHeroCard(hero);
-                                },
-                              ),
-                            ),
-                            // Кнопка добавления персонажа
-                            Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(top: 16),
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const CreateHeroScreen(),
-                                    ),
-                                  );
-                                  await _loadHeroes();
-                                },
-                                icon: const Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                label: const Text(
-                                  'Создать персонажа',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterDropdown({
-    required String value,
-    required List<String> items,
-    required String label,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        items:
-            items
-                .map(
-                  (item) => DropdownMenuItem(
-                    value: item,
-                    child: Text(
-                      item,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 12,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 6,
-          ),
         ),
-        dropdownColor: AppColors.surface,
-        icon: const Icon(Icons.arrow_drop_down, color: Colors.white, size: 16),
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-        isExpanded: true,
-      ),
+        // Absolute positioned search bar
+        if (_isSearchActive)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Material(
+              color: AppColors.surface.withOpacity(0.98),
+              elevation: 8,
+              child: SafeArea(
+                bottom: false,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'Поиск персонажей...',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                            filled: true,
+                            fillColor: AppColors.primary.withOpacity(0.15),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 0,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isSearchActive = false;
+                                  _searchController.clear();
+                                  filteredHeroes = List.from(heroes);
+                                });
+                              },
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
