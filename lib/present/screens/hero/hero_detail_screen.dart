@@ -2,100 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:putnik_app/present/routes/app_router.dart';
 import '../../../models/hero_model.dart';
+import '../../../models/edit_field.dart';
+import '../../../models/skill_data.dart';
 import '../../theme/app_colors.dart';
-
-// Класс для описания полей редактирования
-class EditField {
-  final String key;
-  final String label;
-  final dynamic value;
-  final String? displayValue;
-  final String hint;
-  final bool isEditable;
-
-  EditField({
-    required this.key,
-    required this.label,
-    required this.value,
-    this.displayValue,
-    required this.hint,
-    this.isEditable = true,
-  });
-}
-
-// Skill data class
-class SkillData {
-  final String name;
-  final String ability;
-  final HeroModel hero;
-  final bool isClassSkill;
-  final bool requiresStudy;
-  final bool isSelected;
-  final int points;
-  final int bonus;
-  final String skillValue; // Добавляем поле для значения навыка
-
-  SkillData({
-    required this.name,
-    required this.ability,
-    required this.hero,
-    this.isClassSkill = false,
-    this.requiresStudy = false,
-    this.isSelected = false,
-    this.points = 0,
-    this.bonus = 0,
-    this.skillValue = '', // По умолчанию пустая строка
-  });
-
-  SkillData copyWith({
-    String? name,
-    String? ability,
-    HeroModel? hero,
-    bool? isClassSkill,
-    bool? requiresStudy,
-    bool? isSelected,
-    int? points,
-    int? bonus,
-    String? skillValue, // Добавляем в copyWith
-  }) {
-    return SkillData(
-      name: name ?? this.name,
-      ability: ability ?? this.ability,
-      hero: hero ?? this.hero,
-      isClassSkill: isClassSkill ?? this.isClassSkill,
-      requiresStudy: requiresStudy ?? this.requiresStudy,
-      isSelected: isSelected ?? this.isSelected,
-      points: points ?? this.points,
-      bonus: bonus ?? this.bonus,
-      skillValue: skillValue ?? this.skillValue, // Добавляем в copyWith
-    );
-  }
-
-  int _calculateModifier(int score) {
-    return ((score - 10) / 2).floor();
-  }
-
-  int get modifier {
-    switch (ability) {
-      case 'СИЛ':
-        return _calculateModifier(hero.strength);
-      case 'ЛВК':
-        return _calculateModifier(hero.dexterity);
-      case 'ВЫН':
-        return _calculateModifier(hero.constitution);
-      case 'ИНТ':
-        return _calculateModifier(hero.intelligence);
-      case 'МДР':
-        return _calculateModifier(hero.wisdom);
-      case 'ХАР':
-        return _calculateModifier(hero.charisma);
-      default:
-        return 0;
-    }
-  }
-
-  int get total => modifier + points + bonus;
-}
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../components/modals/add_equipment_modal.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 @RoutePage()
 class HeroDetailScreen extends StatefulWidget {
@@ -109,8 +23,8 @@ class HeroDetailScreen extends StatefulWidget {
 
 class _HeroDetailScreenState extends State<HeroDetailScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
   late HeroModel _currentHero;
+  int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
 
   // Skills state management
@@ -148,7 +62,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
     _currentHero = widget.hero;
     _initializeSkills();
   }
@@ -162,7 +75,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _abilityController.dispose();
     _traitController.dispose();
     _equipmentNameController.dispose();
@@ -171,196 +83,16 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   }
 
   void _showAddEquipmentModal() {
-    String equipmentName = '';
-    String equipmentWeight = '';
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder:
-          (context) => StatefulBuilder(
-            builder: (context, setModalState) {
-              return Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.5,
-                ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Добавить снаряжение',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.close, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Название предмета
-                      Text(
-                        'Название предмета:',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        onChanged: (value) {
-                          equipmentName = value;
-                          setModalState(() {});
-                        },
-                        maxLines: 3,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Введите название предмета...',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF2A2A2A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF5B2333),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Вес в фунтах
-                      Text(
-                        'Вес (в фунтах):',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        onChanged: (value) {
-                          equipmentWeight = value;
-                          setModalState(() {});
-                        },
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: '0',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF2A2A2A),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF5B2333),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Кнопки
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4A4A4A),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text('ОТМЕНА'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed:
-                                  equipmentName.isNotEmpty
-                                      ? () {
-                                        setState(() {
-                                          _equipment.add({
-                                            'name': equipmentName,
-                                            'weight':
-                                                int.tryParse(equipmentWeight) ??
-                                                0,
-                                          });
-                                        });
-                                        Navigator.pop(context);
-                                      }
-                                      : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF5B2333),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text('ДОБАВИТЬ'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
+          (context) => AddEquipmentModal(
+            onAddEquipment: (name, weight) {
+              setState(() {
+                _equipment.add({'name': name, 'weight': weight});
+              });
             },
           ),
     );
@@ -1155,92 +887,230 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () {
-              _navigateToEditScreen();
-            },
-          ),
-        ],
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
-          // Character Profile Card
+          // Кастомные табы
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildTabButton('Основное', 0),
+                  _buildTabButton('Защита', 1),
+                  _buildTabButton('Атака', 2),
+                  _buildTabButton('Навыки', 3),
+                  _buildTabButton('Инвентарь', 4),
+                  _buildTabButton('Способности', 5),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Контент таба
+          Expanded(
+            child: IndexedStack(
+              index: _selectedTabIndex,
+              children: [
+                _buildMainTab(),
+                _buildDefenseTab(),
+                _buildAttackTab(),
+                _buildSkillsTab(),
+                _buildInventoryTab(),
+                _buildAbilitiesTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabButton(String label, int index) {
+    final bool isSelected = _selectedTabIndex == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+      child: TextButton(
+        style: TextButton.styleFrom(
+          backgroundColor:
+              isSelected ? const Color(0xFF5B2333) : Colors.transparent,
+          foregroundColor: isSelected ? Colors.white : Colors.grey[400],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        ),
+        onPressed: () {
+          setState(() {
+            _selectedTabIndex = index;
+          });
+        },
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            letterSpacing: isSelected ? 0.5 : 0.3,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainTab() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Карточка героя
           Container(
             margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(0),
             decoration: BoxDecoration(
-              color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFF232323),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withOpacity(0.18),
                   blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF5B2333),
-                        const Color(0xFF4B3869),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                // Увеличенный аватар
+                Stack(
+                  children: [
+                    Container(
+                      width: 160,
+                      height: 220,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(18),
+                          bottomLeft: Radius.circular(18),
+                        ),
+                        color: const Color(0xFF3A2A2A),
+                      ),
+                      child:
+                          _currentHero.photoPath != null &&
+                                  _currentHero.photoPath!.isNotEmpty
+                              ? ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(18),
+                                  bottomLeft: Radius.circular(18),
+                                ),
+                                child: Image.file(
+                                  File(_currentHero.photoPath!),
+                                  width: 160,
+                                  height: 220,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                              : Center(
+                                child: Icon(
+                                  Icons.person,
+                                  size: 100,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.white,
-                  ),
+                    // HP абсолютно внизу слева (оставить как есть)
+                    Positioned(
+                      left: 10,
+                      bottom: 10,
+                      child: GestureDetector(
+                        onTap: _showHpEditModal,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${_currentHero.currentHp}',
+                                style: const TextStyle(
+                                  color: Color(0xFFD6B97B),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                ' / ${_currentHero.maxHp}',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                // Character Info
+                const SizedBox(width: 18),
+                // Информация о герое + карандаш
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Stack(
                     children: [
-                      Text(
-                        _currentHero.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 18,
+                          horizontal: 0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _currentHero.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                _buildTag(_currentHero.characterClass),
+                                _buildTag(_currentHero.race),
+                                _buildTag(_currentHero.alignment),
+                                _buildTag('${_currentHero.age} лет'),
+                                _buildTag(_currentHero.gender),
+                                if (_currentHero.archetype != null &&
+                                    _currentHero.archetype!.isNotEmpty)
+                                  _buildTag(_currentHero.archetype!),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_currentHero.characterClass} ${_currentHero.level} уровня',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${_currentHero.race}, ${_currentHero.alignment}',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${_currentHero.age} лет, ${_currentHero.gender}',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 12,
+                      // Карандаш справа сверху
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          onPressed: _showEditHeroModal,
+                          tooltip: 'Редактировать',
                         ),
                       ),
                     ],
@@ -1249,54 +1119,222 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
               ],
             ),
           ),
-
-          // Tabs
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            indicatorSize: TabBarIndicatorSize.tab,
-            padding: EdgeInsets.zero,
-            dividerColor: Colors.transparent,
-            indicator: BoxDecoration(
-              color: const Color(0xFF5B2333),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.grey[400],
-            labelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
-            ),
-            tabs: const [
-              Tab(text: 'Основное'),
-              Tab(text: 'Защита'),
-              Tab(text: 'Атака'),
-              Tab(text: 'Навыки'),
-              Tab(text: 'Инвентарь'),
-              Tab(text: 'Способности'),
-              Tab(text: 'Заметки'),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Tab Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+          // Прогресс-бар опыта
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.only(top: 8, bottom: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMainTab(),
-                _buildDefenseTab(),
-                _buildAttackTab(),
-                _buildSkillsTab(),
-                _buildInventoryTab(),
-                _buildAbilitiesTab(),
-                _buildNotesTab(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'ОПЫТ',
+                      style: TextStyle(
+                        color: Color(0xFFD6B97B),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '47235 / 53000', // TODO: заменить на '${_currentHero.experience} / ${_currentHero.experienceToLevelUp}'
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'УРОВЕНЬ 7', // TODO: заменить на 'УРОВЕНЬ ${_currentHero.level}'
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value:
+                        47235 /
+                        53000, // TODO: заменить на _currentHero.experience / _currentHero.experienceToLevelUp
+                    minHeight: 10,
+                    backgroundColor: const Color(0xFF181818),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFD6B97B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // --- СЮДА ДОБАВЛЯЮ ПРОШЛОЕ СОДЕРЖИМОЕ ТАБА "ОСНОВНОЕ" ---
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Column(
+              children: [
+                // Характеристики
+                Container(
+                  width: double.infinity,
+                  child: const Text(
+                    'Характеристики',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Характеристики секциями в сетке 3x2
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 6,
+                  childAspectRatio: 1.8,
+                  children: [
+                    _buildAbilitySection(
+                      'СИЛ',
+                      _currentHero.strength,
+                      _currentHero.tempStrength,
+                    ),
+                    _buildAbilitySection(
+                      'ЛВК',
+                      _currentHero.dexterity,
+                      _currentHero.tempDexterity,
+                    ),
+                    _buildAbilitySection(
+                      'ВЫН',
+                      _currentHero.constitution,
+                      _currentHero.tempConstitution,
+                    ),
+                    _buildAbilitySection(
+                      'ИНТ',
+                      _currentHero.intelligence,
+                      _currentHero.tempIntelligence,
+                    ),
+                    _buildAbilitySection(
+                      'МДР',
+                      _currentHero.wisdom,
+                      _currentHero.tempWisdom,
+                    ),
+                    _buildAbilitySection(
+                      'ХАР',
+                      _currentHero.charisma,
+                      _currentHero.tempCharisma,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Испытания
+                Container(
+                  width: double.infinity,
+                  child: const Text(
+                    'Испытания',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Испытания в сетке 3x1
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 6,
+                  childAspectRatio: 2.5,
+                  children: [
+                    _buildSaveSection(
+                      'СТОЙ',
+                      _currentHero.constitution,
+                      _currentHero.tempConstitution,
+                      _currentHero.tempFortitude,
+                      _currentHero.miscFortitude,
+                      _currentHero.magicFortitude,
+                    ),
+                    _buildSaveSection(
+                      'РЕАК',
+                      _currentHero.dexterity,
+                      _currentHero.tempDexterity,
+                      _currentHero.tempReflex,
+                      _currentHero.miscReflex,
+                      _currentHero.magicReflex,
+                    ),
+                    _buildSaveSection(
+                      'ВОЛЯ',
+                      _currentHero.wisdom,
+                      _currentHero.tempWisdom,
+                      _currentHero.tempWill,
+                      _currentHero.miscWill,
+                      _currentHero.magicWill,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Скорость
+                Container(
+                  width: double.infinity,
+                  child: const Text(
+                    'Скорость',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Скорость в сетке 2x3
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 4,
+                  mainAxisSpacing: 4,
+                  childAspectRatio: 2.2,
+                  children: [
+                    _buildSpeedCard(
+                      'БЕЗ БРОНИ',
+                      _currentHero.baseSpeed ?? 30,
+                      'фт',
+                    ),
+                    _buildSpeedCard(
+                      'В БРОНЕ',
+                      _currentHero.armorSpeed ?? 20,
+                      'фт',
+                    ),
+                    _buildSpeedCard('ПОЛЕТ', _currentHero.flySpeed, 'фт'),
+                    _buildSpeedCard('ПЛАВАНИЕ', _currentHero.swimSpeed, 'фт'),
+                    _buildSpeedCard('ЛАЗАНИЕ', _currentHero.climbSpeed, 'фт'),
+                    _buildSpeedCard('РЫТЬЕ', _currentHero.burrowSpeed, 'фт'),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1305,160 +1343,8 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     );
   }
 
-  Widget _buildMainTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
-        children: [
-          // Характеристики
-          Container(
-            width: double.infinity,
-            child: const Text(
-              'Характеристики',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.left,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Характеристики секциями в сетке 3x2
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 6,
-            childAspectRatio: 1.8,
-            children: [
-              _buildAbilitySection(
-                'СИЛ',
-                _currentHero.strength,
-                _currentHero.tempStrength,
-              ),
-              _buildAbilitySection(
-                'ЛВК',
-                _currentHero.dexterity,
-                _currentHero.tempDexterity,
-              ),
-              _buildAbilitySection(
-                'ВЫН',
-                _currentHero.constitution,
-                _currentHero.tempConstitution,
-              ),
-              _buildAbilitySection(
-                'ИНТ',
-                _currentHero.intelligence,
-                _currentHero.tempIntelligence,
-              ),
-              _buildAbilitySection(
-                'МДР',
-                _currentHero.wisdom,
-                _currentHero.tempWisdom,
-              ),
-              _buildAbilitySection(
-                'ХАР',
-                _currentHero.charisma,
-                _currentHero.tempCharisma,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Испытания
-          Container(
-            width: double.infinity,
-            child: const Text(
-              'Испытания',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.left,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Испытания в сетке 3x1
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 6,
-            childAspectRatio: 2.5,
-            children: [
-              _buildSaveSection(
-                'СТОЙ',
-                _currentHero.constitution,
-                _currentHero.tempConstitution,
-                _currentHero.tempFortitude,
-                _currentHero.miscFortitude,
-                _currentHero.magicFortitude,
-              ),
-              _buildSaveSection(
-                'РЕАК',
-                _currentHero.dexterity,
-                _currentHero.tempDexterity,
-                _currentHero.tempReflex,
-                _currentHero.miscReflex,
-                _currentHero.magicReflex,
-              ),
-              _buildSaveSection(
-                'ВОЛЯ',
-                _currentHero.wisdom,
-                _currentHero.tempWisdom,
-                _currentHero.tempWill,
-                _currentHero.miscWill,
-                _currentHero.magicWill,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Скорость
-          Container(
-            width: double.infinity,
-            child: const Text(
-              'Скорость',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.left,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Скорость в сетке 2x3
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
-            childAspectRatio: 2.2,
-            children: [
-              _buildSpeedCard('БЕЗ БРОНИ', _currentHero.baseSpeed ?? 30, 'фт'),
-              _buildSpeedCard('В БРОНЕ', _currentHero.armorSpeed ?? 20, 'фт'),
-              _buildSpeedCard('ПОЛЕТ', _currentHero.flySpeed, 'фт'),
-              _buildSpeedCard('ПЛАВАНИЕ', _currentHero.swimSpeed, 'фт'),
-              _buildSpeedCard('ЛАЗАНИЕ', _currentHero.climbSpeed, 'фт'),
-              _buildSpeedCard('РЫТЬЕ', _currentHero.burrowSpeed, 'фт'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDefenseTab() {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         children: [
@@ -1531,7 +1417,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   }
 
   Widget _buildAttackTab() {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         children: [
@@ -1615,41 +1501,46 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       ];
     }
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
-        children: [
-          ...List.generate(_skills.length, (index) {
-            return _buildSkillRow(_skills[index], index);
-          }),
-          const SizedBox(height: 20),
-          // Кнопка добавления своего навыка
-          Container(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _showAddCustomSkillModal(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5B2333),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            ...List.generate(_skills.length, (index) {
+              return _buildSkillRow(_skills[index], index);
+            }),
+            const SizedBox(height: 20),
+            // Кнопка добавления своего навыка
+            Container(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _showAddCustomSkillModal(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5B2333),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'ДОБАВИТЬ СВОЙ НАВЫК',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'ДОБАВИТЬ СВОЙ НАВЫК',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2002,6 +1893,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       builder:
           (context) => StatefulBuilder(
             builder: (context, setModalState) {
+              bool isSaving = false;
               final modifier = skill.modifier;
               final total = modifier + points + bonus;
               return Container(
@@ -2021,12 +1913,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Редактирование: ${skill.name}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          // Заголовок с уменьшенным размером и обрезкой
+                          Expanded(
+                            child: Text(
+                              'Редактирование: ${skill.name}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           IconButton(
@@ -2190,7 +2087,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A4A4A),
                                 foregroundColor: Colors.white,
@@ -2207,16 +2107,24 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _skills[index] = skill.copyWith(
-                                    points: points,
-                                    bonus: bonus,
-                                    skillValue: skillValue,
-                                  );
-                                });
-                                Navigator.pop(context);
-                              },
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        setState(() {
+                                          _skills[index] = skill.copyWith(
+                                            points: points,
+                                            bonus: bonus,
+                                            skillValue: skillValue,
+                                          );
+                                        });
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5B2333),
                                 foregroundColor: Colors.white,
@@ -2227,7 +2135,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('СОХРАНИТЬ'),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
                             ),
                           ),
                         ],
@@ -2663,7 +2581,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       totalWeight += (equipment['weight'] as int?) ?? 0;
     }
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         children: [
@@ -2878,7 +2796,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   }
 
   Widget _buildAbilitiesTab() {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         children: [
@@ -3061,44 +2979,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                 return _buildTraitItem(_traits[index], index);
               }),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotesTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            child: const Text(
-              'Заметки',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.left,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Заглушка для заметок
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Text(
-                'Раздел заметок в разработке',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
           ),
         ],
       ),
@@ -3449,7 +3329,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     final cells = (speedValue / 5).floor(); // 1 клетка = 5 футов
 
     return GestureDetector(
-      onTap: () => _showSpeedEditModal(name, speedValue, unit),
+      onTap: _showSpeedEditModal,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
         decoration: BoxDecoration(
@@ -3907,16 +3787,20 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
         (sizeModifier ?? 0) +
         10;
 
-    return Column(
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      childAspectRatio: 2.2,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
       children: [
-        // БМА карточка
         GestureDetector(
           onTap: () => _showBMAEditModal(context),
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
@@ -3948,8 +3832,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        // МБМ карточка
         GestureDetector(
           onTap:
               () => _showMBMFormulaModal(
@@ -3959,10 +3841,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                 sizeModifier,
               ),
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
@@ -3994,8 +3876,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        // ЗБМ карточка
         GestureDetector(
           onTap:
               () => _showZBMFormulaModal(
@@ -4006,10 +3886,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                 sizeModifier,
               ),
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
@@ -4407,7 +4287,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     int baseValue,
     int? tempValue,
   ) {
-    // Создаем переменные состояния вне StatefulBuilder
     int currentBaseValue = baseValue;
     int? currentTempValue = tempValue;
 
@@ -4418,6 +4297,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       builder:
           (context) => StatefulBuilder(
             builder: (context, setModalState) {
+              bool isSaving = false;
               // Вычисляем модификаторы
               final baseModifier = _calculateModifier(currentBaseValue);
               final tempModifier =
@@ -4535,7 +4415,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A4A4A),
                                 foregroundColor: Colors.white,
@@ -4552,15 +4435,22 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                // Обновляем героя
-                                _updateHeroAbility(
-                                  abilityName,
-                                  currentBaseValue,
-                                  currentTempValue,
-                                );
-                                Navigator.pop(context);
-                              },
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        _updateHeroAbility(
+                                          abilityName,
+                                          currentBaseValue,
+                                          currentTempValue,
+                                        );
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5B2333),
                                 foregroundColor: Colors.white,
@@ -4571,7 +4461,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('СОХРАНИТЬ'),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
                             ),
                           ),
                         ],
@@ -4593,7 +4493,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     int? miscSave,
     int? magicSave,
   ) {
-    // Создаем переменные состояния вне StatefulBuilder
     int currentTempSave = tempSave ?? 0;
     int currentMiscSave = miscSave ?? 0;
     int currentMagicSave = magicSave ?? 0;
@@ -4605,7 +4504,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       builder:
           (context) => StatefulBuilder(
             builder: (context, setModalState) {
-              // Вычисляем модификаторы
+              bool isSaving = false;
               final baseModifier = _calculateModifier(baseAbility);
               final tempModifier =
                   tempAbility != null
@@ -4619,7 +4518,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                   currentTempSave +
                   currentMiscSave +
                   currentMagicSave;
-
               return Container(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.8,
@@ -4635,7 +4533,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Заголовок
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -4657,8 +4554,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           ],
                         ),
                         const SizedBox(height: 20),
-
-                        // Текущие значения
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -4746,15 +4641,14 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                        const SizedBox(height: 20),
-
-                        // Кнопки
                         Row(
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed:
+                                    isSaving
+                                        ? null
+                                        : () => Navigator.pop(context),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF4A4A4A),
                                   foregroundColor: Colors.white,
@@ -4771,16 +4665,23 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                             const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  // Обновляем героя
-                                  _updateHeroSave(
-                                    saveName,
-                                    currentTempSave,
-                                    currentMiscSave,
-                                    currentMagicSave,
-                                  );
-                                  Navigator.pop(context);
-                                },
+                                onPressed:
+                                    isSaving
+                                        ? null
+                                        : () async {
+                                          setModalState(() => isSaving = true);
+                                          _updateHeroSave(
+                                            saveName,
+                                            currentTempSave,
+                                            currentMiscSave,
+                                            currentMagicSave,
+                                          );
+                                          await updateHeroInFirebase(
+                                            _currentHero,
+                                          );
+                                          setModalState(() => isSaving = false);
+                                          Navigator.pop(context);
+                                        },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF5B2333),
                                   foregroundColor: Colors.white,
@@ -4791,7 +4692,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: const Text('СОХРАНИТЬ'),
+                                child:
+                                    isSaving
+                                        ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : const Text('СОХРАНИТЬ'),
                               ),
                             ),
                           ],
@@ -4833,9 +4744,13 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     });
   }
 
-  void _showSpeedEditModal(String speedName, int currentSpeed, String unit) {
-    int speedValue = currentSpeed;
-    int cellsValue = (speedValue / 5).floor();
+  void _showSpeedEditModal() {
+    int baseSpeed = _currentHero.baseSpeed ?? 30;
+    int armorSpeed = _currentHero.armorSpeed ?? 20;
+    int flySpeed = _currentHero.flySpeed ?? 0;
+    int swimSpeed = _currentHero.swimSpeed ?? 0;
+    int climbSpeed = _currentHero.climbSpeed ?? 0;
+    int burrowSpeed = _currentHero.burrowSpeed ?? 0;
 
     showModalBottomSheet(
       context: context,
@@ -4844,9 +4759,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       builder:
           (context) => StatefulBuilder(
             builder: (context, setModalState) {
+              bool isSaving = false;
               return Container(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
                 ),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1A1A1A),
@@ -4858,13 +4774,12 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Заголовок
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Редактирование: $speedName',
-                            style: const TextStyle(
+                          const Text(
+                            'Редактировать скорости',
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -4877,64 +4792,68 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Текущие значения
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Значения (нажмите для редактирования)',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildEditableValueCard(
-                                    'Футы',
-                                    '$speedValue $unit',
-                                    (newValue) {
-                                      speedValue = newValue;
-                                      cellsValue = (speedValue / 5).floor();
-                                      setModalState(() {});
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildEditableValueCard(
-                                    'Клетки',
-                                    '$cellsValue',
-                                    (newValue) {
-                                      cellsValue = newValue;
-                                      speedValue = cellsValue * 5;
-                                      setModalState(() {});
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      _buildEditableValueCard(
+                        'БЕЗ БРОНИ (фт)',
+                        baseSpeed.toString(),
+                        (v) {
+                          baseSpeed = v;
+                          setModalState(() {});
+                        },
                       ),
-                      const SizedBox(height: 20),
-
-                      // Кнопки
+                      const SizedBox(height: 12),
+                      _buildEditableValueCard(
+                        'В БРОНЕ (фт)',
+                        armorSpeed.toString(),
+                        (v) {
+                          armorSpeed = v;
+                          setModalState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEditableValueCard(
+                        'ПОЛЕТ (фт)',
+                        flySpeed.toString(),
+                        (v) {
+                          flySpeed = v;
+                          setModalState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEditableValueCard(
+                        'ПЛАВАНИЕ (фт)',
+                        swimSpeed.toString(),
+                        (v) {
+                          swimSpeed = v;
+                          setModalState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEditableValueCard(
+                        'ЛАЗАНИЕ (фт)',
+                        climbSpeed.toString(),
+                        (v) {
+                          climbSpeed = v;
+                          setModalState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEditableValueCard(
+                        'РЫТЬЕ (фт)',
+                        burrowSpeed.toString(),
+                        (v) {
+                          burrowSpeed = v;
+                          setModalState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 24),
                       Row(
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A4A4A),
                                 foregroundColor: Colors.white,
@@ -4951,10 +4870,26 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                _updateHeroSpeed(speedName, speedValue);
-                                Navigator.pop(context);
-                              },
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        setState(() {
+                                          _currentHero.baseSpeed = baseSpeed;
+                                          _currentHero.armorSpeed = armorSpeed;
+                                          _currentHero.flySpeed = flySpeed;
+                                          _currentHero.swimSpeed = swimSpeed;
+                                          _currentHero.climbSpeed = climbSpeed;
+                                          _currentHero.burrowSpeed =
+                                              burrowSpeed;
+                                        });
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5B2333),
                                 foregroundColor: Colors.white,
@@ -4965,7 +4900,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('СОХРАНИТЬ'),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
                             ),
                           ),
                         ],
@@ -5027,6 +4972,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       builder:
           (context) => StatefulBuilder(
             builder: (context, setModalState) {
+              bool isSaving = false;
               return Container(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.7,
@@ -5232,7 +5178,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4A4A4A),
                                 foregroundColor: Colors.white,
@@ -5249,18 +5198,26 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                _updateHeroDefense(
-                                  defenseName,
-                                  armorBonus,
-                                  shieldBonus,
-                                  naturalArmor,
-                                  deflectionBonus,
-                                  miscACBonus,
-                                  sizeModifier,
-                                );
-                                Navigator.pop(context);
-                              },
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        _updateHeroDefense(
+                                          defenseName,
+                                          armorBonus,
+                                          shieldBonus,
+                                          naturalArmor,
+                                          deflectionBonus,
+                                          miscACBonus,
+                                          sizeModifier,
+                                        );
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5B2333),
                                 foregroundColor: Colors.white,
@@ -5271,7 +5228,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('СОХРАНИТЬ'),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
                             ),
                           ),
                         ],
@@ -5734,6 +5701,11 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       builder:
           (context) => StatefulBuilder(
             builder: (context, setModalState) {
+              bool isSaving = false;
+              final dexterityModifier = _calculateModifier(
+                _currentHero.dexterity,
+              );
+              final totalModifier = dexterityModifier + miscInitiativeBonus;
               return Container(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.7,
@@ -5748,7 +5720,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Заголовок
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -5767,8 +5738,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Формула расчета инициативы
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -5792,7 +5761,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                 Expanded(
                                   child: _buildFormulaCard(
                                     'ЛВК + Прочий',
-                                    '${_calculateModifier(_currentHero.dexterity)} + $miscInitiativeBonus',
+                                    '$dexterityModifier + $miscInitiativeBonus',
                                     Colors.blue,
                                   ),
                                 ),
@@ -5811,7 +5780,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                   ),
                                 ),
                                 Text(
-                                  '${_calculateModifier(_currentHero.dexterity) + miscInitiativeBonus >= 0 ? '+' : ''}${_calculateModifier(_currentHero.dexterity) + miscInitiativeBonus}',
+                                  '${totalModifier >= 0 ? '+' : ''}$totalModifier',
                                   style: const TextStyle(
                                     color: Color(0xFF00FF00),
                                     fontSize: 16,
@@ -5824,8 +5793,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // Поля для редактирования
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -5862,12 +5829,14 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         ),
                       ),
                       const Spacer(),
-                      // Кнопки
                       Row(
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2A2A2A),
                                 foregroundColor: Colors.white,
@@ -5884,14 +5853,21 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                // Обновляем героя
-                                setState(() {
-                                  _currentHero.miscInitiativeBonus =
-                                      miscInitiativeBonus;
-                                });
-                                Navigator.pop(context);
-                              },
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        setState(() {
+                                          _currentHero.miscInitiativeBonus =
+                                              miscInitiativeBonus;
+                                        });
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5B2333),
                                 foregroundColor: Colors.white,
@@ -5902,7 +5878,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text('СОХРАНИТЬ'),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
                             ),
                           ),
                         ],
@@ -6260,4 +6246,546 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
           ),
     );
   }
+
+  // Добавить метод для показа модального окна редактирования HP
+  void _showHpEditModal() {
+    int maxHp = _currentHero.maxHp ?? 100;
+    int currentHp = _currentHero.currentHp ?? 12;
+    final maxHpController = TextEditingController(text: maxHp.toString());
+    final currentHpController = TextEditingController(
+      text: currentHp.toString(),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setModalState) {
+              bool isSaving = false;
+              return Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Редактировать HP',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: maxHpController,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Максимум',
+                                labelStyle: TextStyle(color: Colors.white),
+                                filled: true,
+                                fillColor: const Color(0xFF2A2A2A),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                maxHp = int.tryParse(value) ?? maxHp;
+                                setModalState(() {});
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: currentHpController,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'Текущее',
+                                labelStyle: TextStyle(color: Colors.white),
+                                filled: true,
+                                fillColor: const Color(0xFF2A2A2A),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                currentHp = int.tryParse(value) ?? currentHp;
+                                setModalState(() {});
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4A4A4A),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('ОТМЕНА'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        setState(() {
+                                          _currentHero.maxHp =
+                                              int.tryParse(
+                                                maxHpController.text,
+                                              ) ??
+                                              maxHp;
+                                          _currentHero.currentHp =
+                                              int.tryParse(
+                                                currentHpController.text,
+                                              ) ??
+                                              currentHp;
+                                        });
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF5B2333),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+    );
+  }
+
+  void _showEditHeroModal() {
+    File? tempPhotoFile =
+        _currentHero.photoPath != null && _currentHero.photoPath!.isNotEmpty
+            ? File(_currentHero.photoPath!)
+            : null;
+    String tempName = _currentHero.name;
+    String tempAge = _currentHero.age;
+    String tempGender = _currentHero.gender;
+    String tempAlignment = _currentHero.alignment;
+    String tempClass = _currentHero.characterClass;
+    String tempRace = _currentHero.race;
+    String tempArchetype = _currentHero.archetype ?? '';
+
+    // Создаём контроллеры один раз
+    final nameController = TextEditingController(text: tempName);
+    final ageController = TextEditingController(text: tempAge);
+    final alignmentController = TextEditingController(text: tempAlignment);
+    final classController = TextEditingController(text: tempClass);
+    final raceController = TextEditingController(text: tempRace);
+    final archetypeController = TextEditingController(text: tempArchetype);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setModalState) {
+              bool isSaving = false;
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF232323),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Редактировать героя',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Фото
+                      Row(
+                        children: [
+                          ClipOval(
+                            child:
+                                tempPhotoFile != null
+                                    ? Image.file(
+                                      tempPhotoFile!,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: const Color(0xFF3A2A2A),
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 36,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
+                                    ),
+                          ),
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      final picker = ImagePicker();
+                                      final picked = await picker.pickImage(
+                                        source: ImageSource.gallery,
+                                      );
+                                      if (picked != null) {
+                                        tempPhotoFile = File(picked.path);
+                                        setModalState(() {});
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF5B2333),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Галерея'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      final picker = ImagePicker();
+                                      final picked = await picker.pickImage(
+                                        source: ImageSource.camera,
+                                      );
+                                      if (picked != null) {
+                                        tempPhotoFile = File(picked.path);
+                                        setModalState(() {});
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF5B2333),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Камера'),
+                                  ),
+                                ],
+                              ),
+                              if (tempPhotoFile != null)
+                                TextButton(
+                                  onPressed: () {
+                                    tempPhotoFile = null;
+                                    setModalState(() {});
+                                  },
+                                  child: const Text(
+                                    'Удалить фото',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      // Имя
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Имя',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (v) {
+                          tempName = v;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // Лет
+                      TextField(
+                        controller: ageController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Возраст (лет)',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (v) {
+                          tempAge = v;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // Пол
+                      DropdownButtonFormField<String>(
+                        value: tempGender,
+                        items:
+                            ['Мужской', 'Женский', 'Другое']
+                                .map(
+                                  (g) => DropdownMenuItem(
+                                    value: g,
+                                    child: Text(g),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) {
+                          tempGender = v ?? tempGender;
+                          setModalState(() {});
+                        },
+                        dropdownColor: const Color(0xFF232323),
+                        decoration: const InputDecoration(
+                          labelText: 'Пол',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 12),
+                      // Мировоззрение
+                      TextField(
+                        controller: alignmentController,
+                        decoration: const InputDecoration(
+                          labelText: 'Мировоззрение',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (v) {
+                          tempAlignment = v;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // Класс
+                      TextField(
+                        controller: classController,
+                        decoration: const InputDecoration(
+                          labelText: 'Класс',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (v) {
+                          tempClass = v;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // Раса
+                      TextField(
+                        controller: raceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Раса',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (v) {
+                          tempRace = v;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      // Архетип
+                      TextField(
+                        controller: archetypeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Архетип',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                        onChanged: (v) {
+                          tempArchetype = v;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4A4A4A),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('ОТМЕНА'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed:
+                                  isSaving
+                                      ? null
+                                      : () async {
+                                        setModalState(() => isSaving = true);
+                                        setState(() {
+                                          if (tempPhotoFile != null) {
+                                            _currentHero.photoPath =
+                                                tempPhotoFile!.path;
+                                          } else {
+                                            _currentHero.photoPath = null;
+                                          }
+                                          _currentHero.name = tempName;
+                                          _currentHero.age = tempAge;
+                                          _currentHero.gender = tempGender;
+                                          _currentHero.alignment =
+                                              tempAlignment;
+                                          _currentHero.characterClass =
+                                              tempClass;
+                                          _currentHero.race = tempRace;
+                                          _currentHero.archetype =
+                                              tempArchetype;
+                                        });
+                                        await updateHeroInFirebase(
+                                          _currentHero,
+                                        );
+                                        setModalState(() => isSaving = false);
+                                        Navigator.pop(context);
+                                      },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF5B2333),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child:
+                                  isSaving
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Text('СОХРАНИТЬ'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+    );
+  }
+
+  Future<void> updateHeroInFirebase(HeroModel hero) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || hero.id == null) return;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('heroes')
+        .doc(hero.id)
+        .update(hero.toJson());
+  }
+}
+
+Widget _buildTag(String text) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: const Color(0xFF353535),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
 }

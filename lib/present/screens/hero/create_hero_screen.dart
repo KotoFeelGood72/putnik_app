@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'input_field.dart';
 
 @RoutePage()
 class CreateHeroScreen extends StatefulWidget {
@@ -311,6 +312,7 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
 
   Future<void> _saveHero() async {
     final hero = HeroModel(
+      id: widget.hero?.id,
       name: name,
       race: race,
       characterClass: characterClass,
@@ -332,6 +334,8 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
       wisdom: wisdom,
       charisma: charisma,
       endurance: constitution, // для совместимости
+      maxHp: maxHitPoints,
+      currentHp: currentHitPoints,
       skills: skills,
       weapons: weapons.cast<Map<String, String>>(),
       languages: languages,
@@ -341,29 +345,22 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (widget.hero != null) {
-      // Обновляем существующего героя
-      // Находим документ по данным героя
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('heroes')
-              .where('name', isEqualTo: widget.hero!.name)
-              .where('race', isEqualTo: widget.hero!.race)
-              .where('characterClass', isEqualTo: widget.hero!.characterClass)
-              .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        await snapshot.docs.first.reference.update(hero.toJson());
-      }
-    } else {
-      // Создаем нового героя
+    if (widget.hero != null && widget.hero!.id != null) {
+      // Обновляем существующего героя по id
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('heroes')
+          .doc(widget.hero!.id)
+          .update(hero.toJson());
+    } else {
+      // Создаем нового героя и сохраняем id
+      final docRef = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('heroes')
           .add(hero.toJson());
+      hero.id = docRef.id;
     }
 
     if (mounted) {
@@ -389,76 +386,147 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                _formKey.currentState!.save();
-                _saveHero();
-              }
-            },
-            child: const Text(
-              'Сохранить',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Form(
         key: _formKey,
-        child: Column(
-          children: [
-            // Tabs
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2A2A2A),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                indicatorSize: TabBarIndicatorSize.tab,
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                indicator: BoxDecoration(
-                  color: const Color(0xFF5B2333),
-                  borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Карточка героя (аватар, имя, теги)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: InputField(
+                  placeholder: 'Имя персонажа',
+                  initialValue: name,
+                  onChanged: (v) => setState(() => name = v),
                 ),
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey,
-
-                tabs: const [
-                  Tab(text: 'Основное'),
-                  Tab(text: 'Защита'),
-                  Tab(text: 'Атака'),
-                  Tab(text: 'Навыки'),
-                  Tab(text: 'Инвентарь'),
-                  Tab(text: 'Способности'),
-                  Tab(text: 'Заметки'),
-                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
+              // Класс и HP
+              Row(
                 children: [
-                  _buildBasicInfoTab(),
-                  _buildDefenseTab(),
-                  _buildAttackTab(),
-                  _buildSkillsTab(),
-                  _buildInventoryTab(),
-                  _buildAbilitiesTab(),
-                  _buildNotesTab(),
+                  Expanded(
+                    child: _buildDropdownCard(
+                      'Класс',
+                      characterClass,
+                      classes,
+                      (v) => setState(() => characterClass = v ?? ''),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InputField(
+                      label: 'HP',
+                      placeholder: '',
+                      initialValue: maxHitPoints.toString(),
+                      onChanged:
+                          (v) => setState(
+                            () => maxHitPoints = int.tryParse(v) ?? 0,
+                          ),
+                      isNumber: true,
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              // Архетип и Лет (возраст)
+              Row(
+                children: [
+                  Expanded(
+                    child: InputField(
+                      placeholder: 'Архетип',
+                      initialValue: '',
+                      onChanged: (v) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InputField(
+                      label: 'Лет',
+                      placeholder: '',
+                      initialValue: age.toString(),
+                      onChanged:
+                          (v) => setState(() => age = int.tryParse(v) ?? 0),
+                      isNumber: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Пол и Мировоззрение
+              _buildDropdownCard(
+                'Пол',
+                gender,
+                genders,
+                (v) => setState(() => gender = v ?? ''),
+              ),
+              const SizedBox(height: 12),
+              _buildDropdownCard(
+                'Мировоззрение',
+                alignment,
+                alignments,
+                (v) => setState(() => alignment = v ?? ''),
+              ),
+              const SizedBox(height: 12),
+              // Божество и Раса
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdownCard(
+                      'Божество',
+                      deity,
+                      deities,
+                      (v) => setState(() => deity = v ?? ''),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdownCard(
+                      'Раса',
+                      race,
+                      races,
+                      (v) => setState(() => race = v ?? ''),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Уровень
+              InputField(
+                label: 'Уровень',
+                placeholder: '',
+                initialValue: level.toString(),
+                onChanged: (v) => setState(() => level = int.tryParse(v) ?? 1),
+                isNumber: true,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B2333),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _formKey.currentState!.save();
+                      _saveHero();
+                    }
+                  },
+                  child: const Text(
+                    'Создать',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -467,66 +535,104 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
   // === ОСНОВНАЯ ИНФОРМАЦИЯ ===
   Widget _buildBasicInfoTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Идентификация
-          _buildEditableInfoCard(
-            'Имя персонажа',
-            name,
-            (v) => setState(() => name = v),
+          // Карточка героя (аватар, имя, теги)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(0),
+            decoration: BoxDecoration(
+              color: const Color(0xFF232323),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Аватар
+                Container(
+                  width: 100,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3A2A2A),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                    ),
+                  ),
+                  child: Icon(Icons.person, size: 60, color: Colors.white70),
+                ),
+                const SizedBox(width: 16),
+                // Информация о герое
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildEditableInfoCard(
+                        'Имя персонажа',
+                        name,
+                        (v) => setState(() => name = v),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          _buildTag(characterClass),
+                          _buildTag(race),
+                          _buildTag(alignment),
+                          _buildTag('$age лет'),
+                          _buildTag(gender),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Класс
+          _buildDropdownCard(
+            'Класс',
+            characterClass,
+            classes,
+            (v) => setState(() => characterClass = v ?? ''),
           ),
           const SizedBox(height: 12),
-
-          // Класс и уровень
-          Row(
-            children: [
-              Expanded(
-                child: _buildDropdownCard(
-                  'Класс',
-                  characterClass,
-                  classes,
-                  (v) => setState(() => characterClass = v ?? ''),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildNumberCard(
-                  'Уровень',
-                  level,
-                  (v) => setState(() => level = v),
-                ),
-              ),
-            ],
+          // HP
+          _buildNumberCard(
+            'HP',
+            maxHitPoints,
+            (v) => setState(() => maxHitPoints = v),
           ),
-          const SizedBox(height: 16),
-
-          // Раса и размер
-          Row(
-            children: [
-              Expanded(
-                child: _buildDropdownCard(
-                  'Раса',
-                  race,
-                  races,
-                  (v) => setState(() => race = v ?? ''),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildDropdownCard(
-                  'Размер',
-                  size,
-                  sizes,
-                  (v) => setState(() => size = v ?? ''),
-                ),
-              ),
-            ],
+          const SizedBox(height: 12),
+          // Архетип
+          _buildEditableInfoCard('Архетип', '', (v) => setState(() {})),
+          const SizedBox(height: 12),
+          // Лет (возраст)
+          _buildNumberCard(
+            'Возраст (лет)',
+            age,
+            (v) => setState(() => age = v),
           ),
-          const SizedBox(height: 16),
-
-          // Мировоззрение и божество
+          const SizedBox(height: 12),
+          // Пол
+          _buildDropdownCard(
+            'Пол',
+            gender,
+            genders,
+            (v) => setState(() => gender = v ?? ''),
+          ),
+          const SizedBox(height: 12),
+          // Мировоззрение
           _buildDropdownCard(
             'Мировоззрение',
             alignment,
@@ -534,92 +640,24 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
             (v) => setState(() => alignment = v ?? ''),
           ),
           const SizedBox(height: 12),
+          // Божество
           _buildDropdownCard(
             'Божество',
             deity,
             deities,
             (v) => setState(() => deity = v ?? ''),
           ),
-          const SizedBox(height: 16),
-
-          // Опыт
-          _buildNumberCard(
-            'Опыт',
-            experience,
-            (v) => setState(() => experience = v),
-          ),
-          const SizedBox(height: 20),
-
-          // Характеристики
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'СИЛА',
-                  strength.toString(),
-                  (v) => setState(() => strength = int.tryParse(v) ?? 10),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatCard(
-                  'ЛОВКОСТЬ',
-                  dexterity.toString(),
-                  (v) => setState(() => dexterity = int.tryParse(v) ?? 10),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'ТЕЛОСЛОЖЕНИЕ',
-                  constitution.toString(),
-                  (v) => setState(() => constitution = int.tryParse(v) ?? 10),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatCard(
-                  'ИНТЕЛЛЕКТ',
-                  intelligence.toString(),
-                  (v) => setState(() => intelligence = int.tryParse(v) ?? 10),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'МУДРОСТЬ',
-                  wisdom.toString(),
-                  (v) => setState(() => wisdom = int.tryParse(v) ?? 10),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatCard(
-                  'ХАРИЗМА',
-                  charisma.toString(),
-                  (v) => setState(() => charisma = int.tryParse(v) ?? 10),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Инициатива и скорость
-          _buildNumberCard(
-            'Инициатива',
-            initiative,
-            (v) => setState(() => initiative = v),
+          const SizedBox(height: 12),
+          // Раса
+          _buildDropdownCard(
+            'Раса',
+            race,
+            races,
+            (v) => setState(() => race = v ?? ''),
           ),
           const SizedBox(height: 12),
-          _buildNumberCard('Скорость', speed, (v) => setState(() => speed = v)),
+          // Уровень
+          _buildNumberCard('Уровень', level, (v) => setState(() => level = v)),
         ],
       ),
     );
@@ -977,33 +1015,23 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
     Function(String) onChanged,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       decoration: BoxDecoration(
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintStyle: TextStyle(color: Colors.grey),
-            ),
-            initialValue: value,
-            onChanged: onChanged,
-          ),
-        ],
+      child: TextFormField(
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: label, // Используем label как placeholder
+          hintStyle: const TextStyle(color: Colors.grey),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+        initialValue: value,
+        onChanged: onChanged,
       ),
     );
   }
@@ -1063,84 +1091,59 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
     Function(String?) onChanged,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
       decoration: BoxDecoration(
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: value.isNotEmpty ? value : null,
-            items:
-                items
-                    .map(
-                      (item) => DropdownMenuItem(
-                        value: item,
-                        child: Text(
-                          item,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    )
-                    .toList(),
-            onChanged: onChanged,
-            style: const TextStyle(color: Colors.white),
-            dropdownColor: const Color(0xFF2A2A2A),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ],
+      child: DropdownButtonFormField<String>(
+        value: value.isNotEmpty ? value : null,
+        items:
+            items
+                .map(
+                  (item) => DropdownMenuItem(
+                    value: item,
+                    child: Text(item, style: const TextStyle(fontSize: 12)),
+                  ),
+                )
+                .toList(),
+        onChanged: onChanged,
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+        dropdownColor: const Color(0xFF2A2A2A),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          isDense: true,
+          hintText: label,
+          hintStyle: const TextStyle(color: Colors.grey),
+        ),
       ),
     );
   }
 
   Widget _buildNumberCard(String label, int value, Function(int) onChanged) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       decoration: BoxDecoration(
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            initialValue: value.toString(),
-            keyboardType: TextInputType.number,
-            onChanged: (v) => onChanged(int.tryParse(v) ?? value),
-          ),
-        ],
+      child: TextFormField(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 10),
+          isDense: true,
+        ),
+        initialValue: value.toString(),
+        keyboardType: TextInputType.number,
+        onChanged: (v) => onChanged(int.tryParse(v) ?? value),
       ),
     );
   }
@@ -1518,6 +1521,25 @@ class _CreateHeroScreenState extends State<CreateHeroScreen>
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // Добавляю вспомогательный метод для тега
+  Widget _buildTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF353535),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

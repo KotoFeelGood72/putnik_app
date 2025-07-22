@@ -70,7 +70,9 @@ class _HeroListScreenState extends State<HeroListScreen> {
                 .collection('heroes')
                 .get();
         heroes =
-            snapshot.docs.map((doc) => HeroModel.fromJson(doc.data())).toList();
+            snapshot.docs
+                .map((doc) => HeroModel.fromJson(doc.data(), id: doc.id))
+                .toList();
       }
     } catch (e) {
       heroes = [];

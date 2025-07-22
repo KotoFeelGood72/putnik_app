@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 class HeroModel {
+  String? id;
   String name;
   String race;
   String characterClass;
@@ -24,6 +25,16 @@ class HeroModel {
   int wisdom;
   int charisma;
   int endurance;
+
+  // HP
+  int maxHp;
+  int currentHp;
+
+  // Архетип
+  String? archetype;
+
+  // Фото
+  String? photoPath;
 
   // Временные характеристики (может быть null)
   int? tempStrength;
@@ -84,6 +95,7 @@ class HeroModel {
   List<String> languages;
 
   HeroModel({
+    this.id,
     required this.name,
     required this.race,
     required this.characterClass,
@@ -105,6 +117,10 @@ class HeroModel {
     required this.wisdom,
     required this.charisma,
     required this.endurance,
+    required this.maxHp,
+    required this.currentHp,
+    this.archetype,
+    this.photoPath,
     this.tempStrength,
     this.tempDexterity,
     this.tempConstitution,
@@ -141,6 +157,7 @@ class HeroModel {
   });
 
   Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
     'name': name,
     'race': race,
     'characterClass': characterClass,
@@ -162,6 +179,10 @@ class HeroModel {
     'wisdom': wisdom,
     'charisma': charisma,
     'endurance': endurance,
+    'maxHp': maxHp,
+    'currentHp': currentHp,
+    'archetype': archetype,
+    'photoPath': photoPath,
     'tempStrength': tempStrength,
     'tempDexterity': tempDexterity,
     'tempConstitution': tempConstitution,
@@ -197,7 +218,7 @@ class HeroModel {
     'skillDetails': skillDetails.map((s) => s.toJson()).toList(),
   };
 
-  factory HeroModel.fromJson(Map<String, dynamic> json) {
+  factory HeroModel.fromJson(Map<String, dynamic> json, {String? id}) {
     // Создаем список навыков по умолчанию, если skillDetails отсутствует
     List<SkillModel> defaultSkillDetails = [
       SkillModel(
@@ -518,66 +539,69 @@ class HeroModel {
     ];
 
     return HeroModel(
-      name: json['name'] ?? '',
-      race: json['race'] ?? '',
-      characterClass: json['characterClass'] ?? '',
-      alignment: json['alignment'] ?? '',
-      deity: json['deity'] ?? '',
-      homeland: json['homeland'] ?? '',
-      gender: json['gender'] ?? '',
-      age: json['age'] ?? '',
-      height: json['height'] ?? '',
-      weight: json['weight'] ?? '',
-      hair: json['hair'] ?? '',
-      eyes: json['eyes'] ?? '',
-      level: json['level'] ?? '',
-      size: json['size'] ?? '',
-      strength: json['strength'] ?? 0,
-      dexterity: json['dexterity'] ?? 0,
-      constitution: json['constitution'] ?? 0,
-      intelligence: json['intelligence'] ?? 0,
-      wisdom: json['wisdom'] ?? 0,
-      charisma: json['charisma'] ?? 0,
-      endurance: json['endurance'] ?? 0,
-      tempStrength: json['tempStrength'],
-      tempDexterity: json['tempDexterity'],
-      tempConstitution: json['tempConstitution'],
-      tempIntelligence: json['tempIntelligence'],
-      tempWisdom: json['tempWisdom'],
-      tempCharisma: json['tempCharisma'],
-      tempFortitude: json['tempFortitude'],
-      tempReflex: json['tempReflex'],
-      tempWill: json['tempWill'],
-      miscFortitude: json['miscFortitude'],
-      miscReflex: json['miscReflex'],
-      miscWill: json['miscWill'],
-      magicFortitude: json['magicFortitude'],
-      magicReflex: json['magicReflex'],
-      magicWill: json['magicWill'],
-      baseSpeed: json['baseSpeed'],
-      armorSpeed: json['armorSpeed'],
-      flySpeed: json['flySpeed'],
-      swimSpeed: json['swimSpeed'],
-      climbSpeed: json['climbSpeed'],
-      burrowSpeed: json['burrowSpeed'],
-      armorBonus: json['armorBonus'],
-      shieldBonus: json['shieldBonus'],
-      naturalArmor: json['naturalArmor'],
-      deflectionBonus: json['deflectionBonus'],
-      miscACBonus: json['miscACBonus'],
-      sizeModifier: json['sizeModifier'],
-      spellResistance: json['spellResistance'],
-      miscInitiativeBonus: json['miscInitiativeBonus'],
-      skills: Map<String, int>.from(json['skills'] ?? {}),
-      weapons: List<Map<String, dynamic>>.from(
-        (json['weapons'] ?? []).map((w) => Map<String, dynamic>.from(w)),
-      ),
-      languages: List<String>.from(json['languages'] ?? []),
-      skillDetails: json['skillDetails'] != null
-          ? (json['skillDetails'] as List)
-              .map((s) => SkillModel.fromJson(s))
-              .toList()
-          : defaultSkillDetails,
+      id: id,
+      name: json['name'] as String,
+      race: json['race'] as String,
+      characterClass: json['characterClass'] as String,
+      alignment: json['alignment'] as String,
+      deity: json['deity'] as String,
+      homeland: json['homeland'] as String,
+      gender: json['gender'] as String,
+      age: json['age'] as String,
+      height: json['height'] as String,
+      weight: json['weight'] as String,
+      hair: json['hair'] as String,
+      eyes: json['eyes'] as String,
+      level: json['level'] as String,
+      size: json['size'] as String,
+      strength: json['strength'] as int,
+      dexterity: json['dexterity'] as int,
+      constitution: json['constitution'] as int,
+      intelligence: json['intelligence'] as int,
+      wisdom: json['wisdom'] as int,
+      charisma: json['charisma'] as int,
+      endurance: json['endurance'] as int,
+      maxHp: json['maxHp'] as int? ?? 100,
+      currentHp: json['currentHp'] as int? ?? 100,
+      archetype: json['archetype'] as String?,
+      photoPath: json['photoPath'] as String?,
+      tempStrength: json['tempStrength'] as int?,
+      tempDexterity: json['tempDexterity'] as int?,
+      tempConstitution: json['tempConstitution'] as int?,
+      tempIntelligence: json['tempIntelligence'] as int?,
+      tempWisdom: json['tempWisdom'] as int?,
+      tempCharisma: json['tempCharisma'] as int?,
+      tempFortitude: json['tempFortitude'] as int?,
+      tempReflex: json['tempReflex'] as int?,
+      tempWill: json['tempWill'] as int?,
+      miscFortitude: json['miscFortitude'] as int?,
+      miscReflex: json['miscReflex'] as int?,
+      miscWill: json['miscWill'] as int?,
+      magicFortitude: json['magicFortitude'] as int?,
+      magicReflex: json['magicReflex'] as int?,
+      magicWill: json['magicWill'] as int?,
+      baseSpeed: json['baseSpeed'] as int?,
+      armorSpeed: json['armorSpeed'] as int?,
+      flySpeed: json['flySpeed'] as int?,
+      swimSpeed: json['swimSpeed'] as int?,
+      climbSpeed: json['climbSpeed'] as int?,
+      burrowSpeed: json['burrowSpeed'] as int?,
+      armorBonus: json['armorBonus'] as int?,
+      shieldBonus: json['shieldBonus'] as int?,
+      naturalArmor: json['naturalArmor'] as int?,
+      deflectionBonus: json['deflectionBonus'] as int?,
+      miscACBonus: json['miscACBonus'] as int?,
+      sizeModifier: json['sizeModifier'] as int?,
+      spellResistance: json['spellResistance'] as int?,
+      miscInitiativeBonus: json['miscInitiativeBonus'] as int?,
+      skills: Map<String, int>.from(json['skills'] as Map),
+      weapons: List<Map<String, dynamic>>.from(json['weapons'] as List),
+      languages: List<String>.from(json['languages'] as List),
+      skillDetails:
+          (json['skillDetails'] as List<dynamic>?)
+              ?.map((s) => SkillModel.fromJson(s as Map<String, dynamic>))
+              .toList() ??
+          defaultSkillDetails,
     );
   }
 }
