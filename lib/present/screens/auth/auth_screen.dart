@@ -2,12 +2,12 @@ import 'package:auto_route/auto_route.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-
 import 'package:putnik_app/present/components/button/btn.dart';
-import 'package:putnik_app/present/routes/app_router.dart';
 
+import 'package:putnik_app/present/routes/app_router.dart';
 import 'package:putnik_app/present/theme/app_colors.dart';
 import 'package:putnik_app/services/auth/firebase_auth_service.dart';
+import 'package:putnik_app/present/screens/hero/input_field.dart';
 
 @RoutePage()
 class AuthScreen extends StatefulWidget {
@@ -81,7 +81,6 @@ class _AuthScreenState extends State<AuthScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок
               Text(
                 'Вход',
                 style: const TextStyle(
@@ -94,146 +93,60 @@ class _AuthScreenState extends State<AuthScreen> {
               const SizedBox(height: 12),
               Text(
                 'Войдите в аккаунт для управления и ведения персонажа в любимой DND-игре',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[400],
-                  height: 1.4,
-                ),
+                style: TextStyle(fontSize: 20, color: Colors.grey[400]),
               ),
               const SizedBox(height: 40),
 
-              // Форма
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
                     // Email
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2A2A2A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[800]!, width: 1),
-                      ),
-                      child: TextFormField(
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'E-mail',
-                          labelStyle: TextStyle(color: Colors.grey[400]),
-                          prefixIcon: Icon(
-                            Icons.email,
-                            color: Colors.grey[400],
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Введите e-mail';
-                          final reg = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
-                          return reg.hasMatch(v) ? null : 'Неверный e-mail';
-                        },
-                      ),
+                    InputField(
+                      placeholder: 'E-mail',
+                      initialValue: _emailCtrl.text,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (v) => _emailCtrl.text = v,
+                      textSize: 20,
+                      height: 60,
                     ),
                     const SizedBox(height: 20),
-
-                    // Password
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2A2A2A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[800]!, width: 1),
-                      ),
-                      child: TextFormField(
-                        controller: _passwordCtrl,
-                        obscureText: _obscurePwd,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'Пароль',
-                          labelStyle: TextStyle(color: Colors.grey[400]),
-                          prefixIcon: Icon(Icons.lock, color: Colors.grey[400]),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePwd
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.grey[400],
-                            ),
-                            onPressed:
-                                () =>
-                                    setState(() => _obscurePwd = !_obscurePwd),
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                        validator:
-                            (v) =>
-                                (v == null || v.length < 6)
-                                    ? 'Минимум 6 символов'
-                                    : null,
-                      ),
+                    InputField(
+                      placeholder: 'Пароль',
+                      initialValue: _passwordCtrl.text,
+                      obscureText: true,
+                      showToggle: true,
+                      isObscured: _obscurePwd,
+                      textSize: 20,
+                      height: 60,
+                      onToggle:
+                          () => setState(() => _obscurePwd = !_obscurePwd),
+                      onChanged: (v) => _passwordCtrl.text = v,
                     ),
                     const SizedBox(height: 32),
-
-                    // Кнопка входа
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5B2333),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 4,
-                          shadowColor: const Color(0xFF5B2333).withOpacity(0.3),
-                        ),
-                        onPressed: _loading ? null : _loginWithEmail,
-                        child:
-                            _loading
-                                ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                                : const Text(
-                                  'Войти',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                      ),
+                    Btn(
+                      text: 'Войти',
+                      onPressed: _loginWithEmail,
+                      loading: _loading,
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Ссылка на восстановление пароля
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontFamily: 'Forum',
+                      fontSize: 20,
+                      color: Colors.grey[400],
+                    ),
                     children: [
                       const TextSpan(text: 'Забыли пароль?  '),
                       TextSpan(
                         text: 'Восстановить',
                         style: const TextStyle(
-                          color: Color(0xFF5B2333),
-                          decoration: TextDecoration.underline,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                         recognizer:
@@ -249,18 +162,20 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Ссылка на регистрацию
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontFamily: 'Forum',
+                      fontSize: 20,
+                      color: Colors.grey[400],
+                    ),
                     children: [
                       const TextSpan(text: 'Нет аккаунта?  '),
                       TextSpan(
                         text: 'Регистрация',
                         style: const TextStyle(
-                          color: Color(0xFF5B2333),
-                          decoration: TextDecoration.underline,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                         recognizer:

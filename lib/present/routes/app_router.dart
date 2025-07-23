@@ -21,6 +21,7 @@ import 'package:putnik_app/present/screens/notes/notes_list_screen.dart';
 import 'package:putnik_app/present/screens/profile/profile_edit_screen.dart';
 import 'package:putnik_app/present/screens/profile/profile_screen.dart';
 import 'package:putnik_app/present/screens/static/welcome_screen.dart';
+import 'package:putnik_app/present/screens/static/start_screen.dart';
 import 'package:putnik_app/present/screens/glossary/glossary_screen.dart';
 
 part 'app_router.gr.dart';
@@ -37,6 +38,7 @@ class AppRouter extends RootStackRouter {
 
   @override
   List<AutoRoute> get routes => [
+    AutoRoute(page: StartRoute.page, path: '/', initial: true),
     AutoRoute(
       page: DashboardRoute.page,
       path: '/dashboard',
@@ -49,12 +51,7 @@ class AppRouter extends RootStackRouter {
         AutoRoute(page: ProfileRoute.page, path: 'profile'),
       ],
     ),
-    AutoRoute(
-      page: WelcomeRoute.page,
-      path: '/',
-      initial: true,
-      guards: [guestGuard],
-    ),
+    AutoRoute(page: WelcomeRoute.page, path: '/welcome', guards: [guestGuard]),
     AutoRoute(page: AuthRoute.page, path: '/auth', guards: [guestGuard]),
     AutoRoute(
       page: CreateHeroRoute.page,
@@ -93,11 +90,7 @@ class AppRouter extends RootStackRouter {
       path: '/notes/:id/edit',
       guards: [authGuard],
     ),
-    AutoRoute(
-      page: GlossaryRoute.page,
-      path: '/glossary',
-      guards: [authGuard],
-    ),
+    AutoRoute(page: GlossaryRoute.page, path: '/glossary', guards: [authGuard]),
     AutoRoute(page: FeaturesStatusRoute.page, path: '/debug/features'),
   ];
 }

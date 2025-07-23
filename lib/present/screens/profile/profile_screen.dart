@@ -23,11 +23,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: NewAppBar(
-        title: 'Профиль',
-        onBack: () => Navigator.of(context).maybePop(),
-        actions: null,
-      ),
+      appBar: const NewAppBar(title: 'Профиль', actions: null),
       body: SafeArea(
         child:
             uid == null
@@ -48,60 +44,41 @@ class ProfileScreen extends ConsumerWidget {
                       );
                     }
                     final userModel = snapshot.data;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 0,
-                        vertical: 0,
-                      ),
-                      child: SingleChildScrollView(
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 24,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const SizedBox(height: 32),
-                            // Fantasy profile card
+                            // Профильная карточка
                             Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
                               padding: const EdgeInsets.symmetric(
                                 vertical: 24,
                                 horizontal: 16,
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(28),
-                                border: Border.all(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
+                                borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.3),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 12),
+                                    color: Colors.black.withOpacity(0.18),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
                                   ),
                                 ],
                               ),
                               child: Column(
                                 children: [
-                                  // Fantasy avatar frame
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.primary,
-                                        width: 3,
+                                      color: AppColors.primary.withOpacity(
+                                        0.15,
                                       ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.primary.withOpacity(
-                                            0.4,
-                                          ),
-                                          blurRadius: 16,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
                                     ),
                                     child: CircleAvatar(
                                       radius: 44,
@@ -117,7 +94,7 @@ class ProfileScreen extends ConsumerWidget {
                                           (userModel == null ||
                                                   userModel.avatar == null ||
                                                   userModel.avatar!.isEmpty)
-                                              ? Icon(
+                                              ? const Icon(
                                                 Icons.shield,
                                                 size: 44,
                                                 color: AppColors.white,
@@ -138,6 +115,17 @@ class ProfileScreen extends ConsumerWidget {
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
+                                  // --- SWITCHER ---
+                                  if (userModel != null)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      child: _RoleSwitcher(
+                                        uid: userModel.uid,
+                                        currentRole: userModel.role,
+                                      ),
+                                    ),
                                   const SizedBox(height: 6),
                                   Text(
                                     userModel?.email ?? '',
@@ -153,211 +141,172 @@ class ProfileScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            // Fantasy section cards
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              child: Column(
-                                children: [
+                            // Секции профиля
+                            Column(
+                              children: [
+                                if (userModel?.role == 'master') ...[
                                   _ProfileSectionCard(
-                                    icon:
-                                        Icons.auto_stories, // Книга приключений
-                                    title: 'История приключений',
-                                    onTap: () {},
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.casino, // Кубик
-                                    title: 'Кампании',
-                                    onTap: () {},
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.emoji_events, // Кубок
-                                    title: 'Рейтинг героев',
-                                    onTap: () {},
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.groups, // Группа
-                                    title: 'Товарищи',
-                                    onTap: () {},
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.edit,
-                                    title: 'Редактировать героя',
+                                    icon: Icons.castle,
+                                    title: 'Создать комнату',
                                     accent: true,
-                                    onTap: () async {
-                                      final result = await context.router.push(
-                                        ProfileEditRoute(),
-                                      );
-                                      if (result == true) {
-                                        (context as Element).markNeedsBuild();
-                                      }
-                                    },
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.note_add, // Заметки
-                                    title: 'Заметки',
                                     onTap: () {
                                       context.router.push(
-                                        const NotesListRoute(),
+                                        const ChatListRoute(),
                                       );
                                     },
                                   ),
                                   const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.stars, // Звезда
-                                    title: 'Достижения',
-                                    onTap: () {},
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _ProfileSectionCard(
-                                    icon: Icons.bug_report, // Отладка
-                                    title: 'Статус функций',
-                                    onTap: () {
-                                      context.router.push(
-                                        const FeaturesStatusRoute(),
-                                      );
-                                    },
-                                  ),
                                 ],
-                              ),
+                                _ProfileSectionCard(
+                                  icon: Icons.auto_stories,
+                                  title: 'История приключений',
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.casino,
+                                  title: 'Кампании',
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.emoji_events,
+                                  title: 'Рейтинг героев',
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.groups,
+                                  title: 'Товарищи',
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.edit,
+                                  title: 'Редактировать героя',
+                                  accent: true,
+                                  onTap: () async {
+                                    final result = await context.router.push(
+                                      ProfileEditRoute(),
+                                    );
+                                    if (result == true) {
+                                      (context as Element).markNeedsBuild();
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.note_add,
+                                  title: 'Заметки',
+                                  onTap: () {
+                                    context.router.push(const NotesListRoute());
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.stars,
+                                  title: 'Достижения',
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _ProfileSectionCard(
+                                  icon: Icons.bug_report,
+                                  title: 'Статус функций',
+                                  onTap: () {
+                                    context.router.push(
+                                      const FeaturesStatusRoute(),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 36),
-                            // Fantasy buttons
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
+                            // Кнопки действий
+                            Btn(
+                              text: 'Покинуть таверну',
+                              onPressed: () async {
+                                await ref.read(authServiceProvider).logout();
+                                if (context.mounted) {
+                                  context.router.replace(const AuthRoute());
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.error,
+                                side: const BorderSide(color: AppColors.error),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                               ),
-                              child: Column(
-                                children: [
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        foregroundColor: AppColors.white,
-                                        elevation: 4,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        backgroundColor: AppColors.surface,
+                                        title: const Text(
+                                          'Удалить героя?',
+                                          style: TextStyle(
+                                            color: AppColors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      onPressed: () async {
-                                        await ref
-                                            .read(authServiceProvider)
-                                            .logout();
-                                        if (context.mounted) {
-                                          context.router.replace(
-                                            const AuthRoute(),
-                                          );
-                                        }
-                                      },
-                                      child: const Text(
-                                        'Покинуть таверну',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton(
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: AppColors.error,
-                                        side: BorderSide(
-                                          color: AppColors.error,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
+                                        content: Text(
+                                          'Вы уверены, что хотите удалить героя? Это действие необратимо.',
+                                          style: TextStyle(
+                                            color: AppColors.white.withOpacity(
+                                              0.8,
+                                            ),
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      onPressed: () async {
-                                        final confirmed = await showDialog<
-                                          bool
-                                        >(
-                                          context: context,
-                                          builder:
-                                              (context) => AlertDialog(
-                                                backgroundColor:
-                                                    AppColors.surface,
-                                                title: const Text(
-                                                  'Удалить героя?',
-                                                  style: TextStyle(
-                                                    color: AppColors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                content: Text(
-                                                  'Вы уверены, что хотите удалить героя? Это действие необратимо.',
-                                                  style: TextStyle(
-                                                    color: AppColors.white
-                                                        .withOpacity(0.8),
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.of(
-                                                          context,
-                                                        ).pop(false),
-                                                    child: const Text(
-                                                      'Отмена',
-                                                      style: TextStyle(
-                                                        color: AppColors.white,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.of(
-                                                          context,
-                                                        ).pop(true),
-                                                    child: const Text(
-                                                      'Удалить',
-                                                      style: TextStyle(
-                                                        color: AppColors.error,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.of(
+                                                  context,
+                                                ).pop(false),
+                                            child: const Text(
+                                              'Отмена',
+                                              style: TextStyle(
+                                                color: AppColors.white,
                                               ),
-                                        );
-                                        if (confirmed == true) {
-                                          await ref
-                                              .read(authServiceProvider)
-                                              .deleteAccount();
-                                          if (context.mounted) {
-                                            Navigator.of(context).pop();
-                                          }
-                                        }
-                                      },
-                                      child: const Text(
-                                        'Удалить героя',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                        ),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.of(
+                                                  context,
+                                                ).pop(true),
+                                            child: const Text(
+                                              'Удалить',
+                                              style: TextStyle(
+                                                color: AppColors.error,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ),
-                                ],
+                                );
+                                if (confirmed == true) {
+                                  await ref
+                                      .read(authServiceProvider)
+                                      .deleteAccount();
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                }
+                              },
+                              child: const Text(
+                                'Удалить героя',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 36),
@@ -444,6 +393,104 @@ class _ProfileSectionCard extends StatelessWidget {
                 size: 24,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleSwitcher extends StatefulWidget {
+  final String uid;
+  final String? currentRole;
+  const _RoleSwitcher({required this.uid, required this.currentRole});
+
+  @override
+  State<_RoleSwitcher> createState() => _RoleSwitcherState();
+}
+
+class _RoleSwitcherState extends State<_RoleSwitcher> {
+  late String? _role;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _role = widget.currentRole;
+  }
+
+  Future<void> _setRole(String newRole) async {
+    if (_role == newRole) return;
+    setState(() => _loading = true);
+    await UserRepository().saveUser(UserModel(uid: widget.uid, role: newRole));
+    setState(() {
+      _role = newRole;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _SwitcherButton(
+          text: 'Мастер игр',
+          active: _role == 'master',
+          color: AppColors.accent,
+          onTap: _loading ? null : () => _setRole('master'),
+        ),
+        const SizedBox(width: 12),
+        _SwitcherButton(
+          text: 'Герой',
+          active: _role == 'hero',
+          color: AppColors.primary,
+          onTap: _loading ? null : () => _setRole('hero'),
+        ),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.only(left: 12),
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SwitcherButton extends StatelessWidget {
+  final String text;
+  final bool active;
+  final Color color;
+  final VoidCallback? onTap;
+  const _SwitcherButton({
+    required this.text,
+    required this.active,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? color.withOpacity(0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: active ? color : Colors.grey, width: 2),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: active ? color : Colors.grey,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
           ),
         ),
       ),

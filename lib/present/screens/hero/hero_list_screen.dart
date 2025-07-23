@@ -9,6 +9,7 @@ import 'hero_detail_screen.dart';
 import 'create_hero_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_colors.dart';
+import 'dart:io';
 
 @RoutePage()
 class HeroListScreen extends StatefulWidget {
@@ -428,13 +429,63 @@ class _HeroListScreenState extends State<HeroListScreen> {
                         ],
                       ),
                       child: ClipOval(
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          child: SvgPicture.asset(
-                            'assets/icons/cup.svg',
-                            color: Colors.white,
-                          ),
-                        ),
+                        child:
+                            hero.photoPath != null && hero.photoPath!.isNotEmpty
+                                ? (hero.photoPath!.startsWith('http')
+                                    ? Image.network(
+                                      hero.photoPath!,
+                                      fit: BoxFit.cover,
+                                      width: 60,
+                                      height: 60,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: Text(
+                                                  hero.name.isNotEmpty
+                                                      ? hero.name[0]
+                                                          .toUpperCase()
+                                                      : '?',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 28,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                    )
+                                    : Image.file(
+                                      File(hero.photoPath!),
+                                      fit: BoxFit.cover,
+                                      width: 60,
+                                      height: 60,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: Text(
+                                                  hero.name.isNotEmpty
+                                                      ? hero.name[0]
+                                                          .toUpperCase()
+                                                      : '?',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 28,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                    ))
+                                : Center(
+                                  child: Text(
+                                    hero.name.isNotEmpty
+                                        ? hero.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                       ),
                     ),
                     const SizedBox(width: 12),

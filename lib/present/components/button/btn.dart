@@ -5,47 +5,72 @@ class Btn extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool disabled;
-  final bool loading; // ← новое
+  final bool loading;
+  final double? buttonSize;
 
   const Btn({
     super.key,
     required this.text,
     this.onPressed,
+    this.buttonSize = 70,
     this.disabled = false,
     this.loading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    // если идёт загрузка или disabled, кнопку блокируем
     final bool isDisabled = disabled || loading || onPressed == null;
 
     return SizedBox(
-      height: 45,
+      height: buttonSize,
       width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 32),
-          backgroundColor:
-              isDisabled ? AppColors.accent.withOpacity(0.5) : AppColors.accent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+      child: GestureDetector(
+        onTap: isDisabled ? null : onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          decoration: BoxDecoration(
+            color: isDisabled ? const Color(0xFFE57373) : AppColors.primary,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFF2B1A10), width: 4),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1A0000).withOpacity(0.8),
+                offset: const Offset(0, 6),
+                blurRadius: 0,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Center(
+            child:
+                loading
+                    ? const SizedBox(
+                      height: 28,
+                      width: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : Text(
+                      text,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        fontFamily: 'Forum',
+                        shadows: [
+                          Shadow(
+                            color: Colors.black54,
+                            offset: Offset(0, 3),
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+          ),
         ),
-        onPressed: isDisabled ? null : onPressed,
-        child:
-            loading
-                ? const SizedBox(
-                  // индикатор вместо текста
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                  ),
-                )
-                : Text(
-                  text,
-                  style: const TextStyle(color: AppColors.white, fontSize: 14),
-                ),
       ),
     );
   }

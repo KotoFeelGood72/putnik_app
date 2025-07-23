@@ -8,6 +8,7 @@ class UserModel {
   final String? bio;
   final String? email;
   final String? avatar;
+  final String? role;
 
   UserModel({
     required this.uid,
@@ -19,6 +20,7 @@ class UserModel {
     this.bio,
     this.email,
     this.avatar,
+    this.role,
   });
 
   factory UserModel.fromMap(String uid, Map<String, dynamic> map) {
@@ -35,6 +37,7 @@ class UserModel {
       bio: map['bio'],
       email: map['email'],
       avatar: map['avatar'],
+      role: map['role'] ?? 'hero',
     );
   }
 
@@ -48,6 +51,7 @@ class UserModel {
       'bio': bio,
       'email': email,
       'avatar': avatar,
+      'role': role,
     };
   }
 }

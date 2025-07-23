@@ -48,6 +48,7 @@ class AppThemes {
 class FantasyTheme {
   static ThemeData get theme => ThemeData(
     useMaterial3: true,
+    fontFamily: 'Forum',
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       surface: AppColors.surface,

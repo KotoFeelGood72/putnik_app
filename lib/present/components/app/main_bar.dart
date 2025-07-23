@@ -1,10 +1,13 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:putnik_app/present/routes/app_router.dart';
+import 'dart:math' as math;
+import 'package:putnik_app/present/components/icons/Icons.dart';
 
 class MainBar extends StatefulWidget {
   final TabsRouter tabsRouter;
-  const MainBar({super.key, required this.tabsRouter});
+  final List<PageRouteInfo> routes;
+  const MainBar({super.key, required this.tabsRouter, required this.routes});
 
   @override
   State<MainBar> createState() => _MainBarState();
@@ -22,163 +25,149 @@ class _MainBarState extends State<MainBar> {
   @override
   void didUpdateWidget(MainBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Синхронизируем состояние при изменении активной вкладки
     if (widget.tabsRouter.activeIndex != oldWidget.tabsRouter.activeIndex) {
       setState(() => _currentIndex = widget.tabsRouter.activeIndex);
     }
   }
 
-  static const double barHeight = 50;
-  static const double iconSize = 16;
-  static const Color barBg = Color(0xFF1A1A1A);
-  static const Color cardBg = Color(0xFF2A2A2A);
-  static const Color activeColor = Color(0xFF5B2333);
-  static const Color textColor = Colors.white;
-  static const Color inactiveColor = Colors.grey;
+  static const double barHeight = 64;
+  static const double iconSize = 28;
+  static const Color barBg = Color(0xFF181A23);
+  static const Color activeColor = Colors.white;
+  static const Color inactiveColor = Color(0x99FFFFFF);
 
   @override
   Widget build(BuildContext context) {
-    int active = widget.tabsRouter.activeIndex;
     return Container(
       height: barHeight,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
       decoration: BoxDecoration(
         color: barBg,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 8,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 18,
+            offset: Offset(0, 6),
           ),
         ],
       ),
       child: Row(
-        children: [
-          Expanded(
-            child: _buildNavItem(
-              context,
-              Icons.pets,
-              0,
-              'Герои',
-              _currentIndex == 0,
-            ),
-          ),
-          SizedBox(width: 3),
-          Expanded(
-            child: _buildNavItem(
-              context,
-              Icons.dashboard,
-              1,
-              'Дашборд',
-              _currentIndex == 1,
-            ),
-          ),
-          SizedBox(width: 3),
-          Expanded(
-            child: _buildNavItem(
-              context,
-              Icons.menu_book,
-              3,
-              'Глоссарий',
-              _currentIndex == 3,
-            ),
-          ),
-          SizedBox(width: 3),
-          Expanded(
-            child: _buildNavItem(
-              context,
-              Icons.settings,
-              4,
-              'Настройки',
-              _currentIndex == 4,
-            ),
-          ),
-        ],
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(widget.routes.length, (index) {
+          final route = widget.routes[index];
+          final iconData = _iconDataForRoute(route);
+          return _buildMaterialNavIcon(
+            context,
+            iconData,
+            index,
+            _currentIndex == index,
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildNavItem(
+  Widget _buildMaterialNavIcon(
     BuildContext context,
     IconData icon,
     int index,
-    String label,
     bool isSelected,
   ) {
     return GestureDetector(
       onTap: () async {
-        if (index == 0) {
-          // Герои
-          widget.tabsRouter.setActiveIndex(0);
-          setState(() => _currentIndex = 0);
-        } else if (index == 1) {
-          // Дашборд
-          widget.tabsRouter.setActiveIndex(1);
-          setState(() => _currentIndex = 1);
-        } else if (index == 3) {
-          // Глоссарий
-          setState(() => _currentIndex = 3);
-          final result = await context.router.push(GlossaryRoute());
-          // После возврата из глоссария, сбрасываем состояние на активную вкладку
-          if (result == null) {
-            setState(() => _currentIndex = widget.tabsRouter.activeIndex);
-          }
-        } else if (index == 4) {
-          // Настройки
-          setState(() => _currentIndex = 4);
-          final result = await context.router.push(ProfileRoute());
-          // После возврата из профиля, сбрасываем состояние на активную вкладку
-          if (result == null) {
-            setState(() => _currentIndex = widget.tabsRouter.activeIndex);
-          }
-        }
+        widget.tabsRouter.setActiveIndex(index);
+        setState(() => _currentIndex = index);
       },
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : cardBg,
-          borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: 56,
+        height: barHeight,
+        alignment: Alignment.center,
+        child: Icon(
+          icon,
+          size: iconSize,
+          color: isSelected ? activeColor : inactiveColor,
         ),
-        child:
-            isSelected
-                ? Container(
-                  height: 50,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, size: iconSize, color: textColor),
-                      SizedBox(width: 2),
-                      Flexible(
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.1,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                : Center(
-                  child: Icon(
-                    icon,
-                    size: iconSize,
-                    color: isSelected ? textColor : inactiveColor,
-                  ),
-                ),
       ),
     );
   }
+
+  IconData _iconDataForRoute(PageRouteInfo route) {
+    final name = route.runtimeType.toString();
+    if (name.contains('HeroListRoute')) return Icons.pets;
+    if (name.contains('MainRoute')) return Icons.dashboard;
+    if (name.contains('GlossaryRoute')) return Icons.menu_book;
+    if (name.contains('ProfileRoute')) return Icons.account_circle;
+    if (name.contains('GalarionMapRoute')) return Icons.map;
+    if (name.contains('NotesListRoute')) return Icons.edit_note;
+    if (name.contains('ChatListRoute')) return Icons.chat;
+    return Icons.circle;
+  }
+}
+
+class _NotchedBarPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill;
+
+    final double notchRadius = 28;
+    final double notchCenterX = size.width / 2;
+    final double barHeight = size.height - 6;
+    final double cornerRadius = 18;
+
+    final path = Path();
+    // Left rounded corner
+    path.moveTo(0, barHeight - cornerRadius);
+    path.quadraticBezierTo(0, barHeight, cornerRadius, barHeight);
+    // Left to notch
+    path.lineTo(notchCenterX - notchRadius - 10, barHeight);
+    // Notch curve up
+    path.quadraticBezierTo(
+      notchCenterX - notchRadius - 2,
+      barHeight,
+      notchCenterX - notchRadius,
+      barHeight - 2,
+    );
+    // Notch arc
+    path.arcTo(
+      Rect.fromCircle(
+        center: Offset(notchCenterX, barHeight - notchRadius + 2),
+        radius: notchRadius,
+      ),
+      math.pi,
+      -math.pi,
+      false,
+    );
+    // Notch curve down
+    path.quadraticBezierTo(
+      notchCenterX + notchRadius + 2,
+      barHeight,
+      notchCenterX + notchRadius + 10,
+      barHeight,
+    );
+    // Right to corner
+    path.lineTo(size.width - cornerRadius, barHeight);
+    path.quadraticBezierTo(
+      size.width,
+      barHeight,
+      size.width,
+      barHeight - cornerRadius,
+    );
+    // Top right
+    path.lineTo(size.width, cornerRadius);
+    path.quadraticBezierTo(size.width, 0, size.width - cornerRadius, 0);
+    // Top left
+    path.lineTo(cornerRadius, 0);
+    path.quadraticBezierTo(0, 0, 0, cornerRadius);
+    path.close();
+
+    canvas.drawShadow(path, Colors.black.withOpacity(0.08), 4, true);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

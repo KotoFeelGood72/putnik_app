@@ -25,6 +25,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _bioCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   String? _gender;
+  String? _role;
   bool _loading = false;
   UserModel? _userModel;
   File? _pickedImage;
@@ -53,6 +54,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _gender = userModel.gender;
         _emailCtrl.text = userModel.email ?? '';
         _avatarUrl = userModel.avatar;
+        _role = userModel.role;
       });
     }
   }
@@ -95,6 +97,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       bio: _bioCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
       avatar: avatarUrl,
+      role: _role,
     );
     await UserRepository().saveUser(updatedUser);
     if (mounted) Navigator.of(context).pop(true);
@@ -287,6 +290,29 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                   (v) =>
                                       v == null || v.isEmpty
                                           ? 'Выберите пол'
+                                          : null,
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              value: _role,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'master',
+                                  child: Text('Мастер игр'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'hero',
+                                  child: Text('Герой'),
+                                ),
+                              ],
+                              onChanged: (val) => setState(() => _role = val),
+                              decoration: const InputDecoration(
+                                labelText: 'Роль',
+                              ),
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Выберите роль'
                                           : null,
                             ),
                             const SizedBox(height: 16),

@@ -69,68 +69,116 @@ class MainScreen extends ConsumerWidget {
     ];
 
     final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid;
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       appBar: NewAppBar(title: 'Главная', actions: null, showBackButton: false),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Сторис слайдер
-              const StoriesSlider(),
-
-              // Секция ранга и прогресса
-              _buildRankSection(),
-              const SizedBox(height: 16),
-
-              // Секция быстрых действий
-              _buildQuickActions(context),
-              const SizedBox(height: 16),
-
-              // Секция друзей онлайн
-              _buildOnlineFriends(context),
-              const SizedBox(height: 16),
-
-              // Карточки разделов
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: sections.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                    childAspectRatio: 1.2,
-                  ),
-                  itemBuilder: (context, index) {
-                    final section = sections[index];
-                    return _SectionCard(section: section);
-                  },
+      body:
+          uid == null
+              ? const Center(
+                child: Text(
+                  'Пользователь не найден',
+                  style: TextStyle(color: Colors.white),
                 ),
+              )
+              : FutureBuilder<UserModel?>(
+                future: UserRepository().getUser(uid),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  }
+                  final userModel = snapshot.data;
+                  return SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // --- КНОПКА СОЗДАТЬ КОМНАТУ ---
+                          if (userModel?.role == 'master')
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.accent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 4,
+                                ),
+                                icon: const Icon(
+                                  Icons.castle,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Создать комнату',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  context.router.push(const ChatListRoute());
+                                },
+                              ),
+                            ),
+                          // Сторис слайдер
+                          const StoriesSlider(),
+                          // Секция ранга и прогресса
+                          _buildRankSection(),
+                          const SizedBox(height: 16),
+                          // Секция быстрых действий
+                          _buildQuickActions(context),
+                          const SizedBox(height: 16),
+                          // Секция друзей онлайн
+                          _buildOnlineFriends(context),
+                          const SizedBox(height: 16),
+                          // Карточки разделов
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: sections.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    mainAxisSpacing: 4,
+                                    crossAxisSpacing: 4,
+                                    childAspectRatio: 1.2,
+                                  ),
+                              itemBuilder: (context, index) {
+                                final section = sections[index];
+                                return _SectionCard(section: section);
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Секция последних активностей
+                          _buildRecentActivities(),
+                          const SizedBox(height: 16),
+                          // Секция достижений
+                          _buildAchievements(),
+                          const SizedBox(height: 16),
+                          // Секция уведомлений
+                          _buildNotifications(context),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-
-              const SizedBox(height: 16),
-
-              // Секция последних активностей
-              _buildRecentActivities(),
-
-              const SizedBox(height: 16),
-
-              // Секция достижений
-              _buildAchievements(),
-
-              const SizedBox(height: 16),
-
-              // Секция уведомлений
-              _buildNotifications(context),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

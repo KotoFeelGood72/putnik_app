@@ -30,6 +30,7 @@ dependencies:
   numberpicker: ^2.1.2
   flutter_slidable: ^3.1.0
   webview_flutter: ^4.7.0
+  video_player: ^2.8.1
 
 dev_dependencies:
   flutter_test:
@@ -41,6 +42,11 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/welcome.mp4
+  fonts:
+    - family: Forum
+      fonts:
+        - asset: assets/fonts/Forum-Regular.ttf
 
 flutter_native_splash:
   color: "#FFFFFF"

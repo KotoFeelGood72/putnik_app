@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Основные цвета фэнтезийной темы
-  static const Color primary = Color(0xFF5B2333);
+  static const Color primary = Color(0xFF9A2E2E);
   static const Color background = Color(0xFF1A1A1A);
   static const Color surface = Color(0xFF2A2A2A);
   static const Color white = Color(0xFFFFFFFF);
