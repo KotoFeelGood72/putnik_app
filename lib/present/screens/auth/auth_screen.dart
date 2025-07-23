@@ -92,7 +92,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Войдите в аккаунт для управления и ведения персонажа в любимой DND-игре',
+                'Войдите в аккаунт для управления и ведения персонажа в PATHFINDER',
                 style: TextStyle(fontSize: 20, color: Colors.grey[400]),
               ),
               const SizedBox(height: 40),
