@@ -8,12 +8,14 @@ import 'package:putnik_app/firebase_options.dart';
 import 'package:putnik_app/guards/auth_guard.dart';
 import 'package:putnik_app/present/routes/app_router.dart';
 import 'package:putnik_app/present/theme/app_themes.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final getIt = GetIt.instance;
 final String locale = Intl.getCurrentLocale();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: 'assets/.env');
 
   try {
     // Инициализация Firebase

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:putnik_app/present/components/button/btn.dart';
+import 'package:putnik_app/present/components/head/default_head.dart';
 import 'package:putnik_app/present/routes/app_router.dart';
+import 'package:putnik_app/present/screens/hero/input_field.dart';
 import 'package:putnik_app/present/theme/app_colors.dart';
 import 'package:putnik_app/services/providers/auth_provider.dart';
 
@@ -86,148 +88,45 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.surface, AppColors.background],
-          ),
-        ),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Заголовок с фэнтезийным стилем
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.accentLight],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowColorLight,
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Восстановление пароля',
-                        style: t.headlineLarge?.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              color: AppColors.black.withOpacity(0.3),
-                              offset: const Offset(0, 2),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Введите ваш e-mail для получения ссылки на восстановление пароля',
-                        style: t.bodyMedium?.copyWith(
-                          color: AppColors.white.withOpacity(0.9),
-                        ),
-                      ),
-                    ],
-                  ),
+                DefaultHead(
+                  title: 'Восстановление пароля',
+                  description:
+                      'Введите ваш e-mail для получения ссылки на восстановление пароля',
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 40),
 
-                // Форма восстановления
                 if (!_emailSent) ...[
                   Form(
                     key: _formKey,
                     child: Column(
                       children: [
-                        // Email поле
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppColors.primary.withOpacity(0.3),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadowColorLight,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: TextFormField(
-                            controller: _emailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            style: TextStyle(color: AppColors.white),
-                            decoration: InputDecoration(
-                              labelText: 'E-mail',
-                              labelStyle: TextStyle(
-                                color: AppColors.white.withOpacity(0.7),
-                              ),
-                              prefixIcon: Icon(
-                                Icons.email,
-                                color: AppColors.primary,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                            ),
-                            validator: (v) {
-                              if (v == null || v.isEmpty)
-                                return 'Введите e-mail';
-                              final reg = RegExp(
-                                r'^[\w\.-]+@[\w\.-]+\.\w{2,}$',
-                              );
-                              return reg.hasMatch(v) ? null : 'Неверный e-mail';
-                            },
-                          ),
+                        InputField(
+                          placeholder: 'E-mail',
+                          keyboardType: TextInputType.emailAddress,
+                          initialValue: _emailCtrl.text,
+                          onChanged: (v) {
+                            _emailCtrl.text = v;
+                            _emailCtrl.selection = TextSelection.fromPosition(
+                              TextPosition(offset: v.length),
+                            );
+                          },
+                          textSize: 16,
+                          height: 56,
+                          customSuffixIcon: null,
+                          label: null,
                         ),
                         const SizedBox(height: 24),
-
-                        // Кнопка отправки
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.primary,
-                                AppColors.accentLight,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadowColorLight,
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Btn(
-                            text: 'Отправить письмо',
-                            loading: _loading,
-                            onPressed: _loading ? null : _resetPassword,
-                          ),
+                        Btn(
+                          text: 'Отправить письмо',
+                          onPressed: _resetPassword,
+                          loading: _loading,
                         ),
                       ],
                     ),
@@ -274,72 +173,63 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 const SizedBox(height: 24),
 
                 // Ссылки навигации
+                const SizedBox(height: 24),
                 Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.2),
-                        width: 1,
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontFamily: 'Forum',
+                        fontSize: 20,
+                        color: Colors.grey[400],
                       ),
-                    ),
-                    child: Column(
                       children: [
-                        RichText(
-                          text: TextSpan(
-                            style: t.bodyMedium?.copyWith(
-                              color: AppColors.white.withOpacity(0.8),
-                            ),
-                            children: [
-                              const TextSpan(text: 'Вспомнили пароль?  '),
-                              TextSpan(
-                                text: 'Войти',
-                                style: TextStyle(
-                                  color: AppColors.accentLight,
-                                  decoration: TextDecoration.underline,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                recognizer:
-                                    TapGestureRecognizer()
-                                      ..onTap =
-                                          () => context.router.replace(
-                                            const AuthRoute(),
-                                          ),
-                              ),
-                            ],
+                        const TextSpan(text: 'Вспомнили пароль?  '),
+                        TextSpan(
+                          text: 'Войти',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        RichText(
-                          text: TextSpan(
-                            style: t.bodyMedium?.copyWith(
-                              color: AppColors.white.withOpacity(0.8),
-                            ),
-                            children: [
-                              const TextSpan(text: 'Нет аккаунта?  '),
-                              TextSpan(
-                                text: 'Зарегистрироваться',
-                                style: TextStyle(
-                                  color: AppColors.accentLight,
-                                  decoration: TextDecoration.underline,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                recognizer:
-                                    TapGestureRecognizer()
-                                      ..onTap =
-                                          () => context.router.replace(
-                                            const RegisterRoute(),
-                                          ),
-                              ),
-                            ],
-                          ),
+                          recognizer:
+                              TapGestureRecognizer()
+                                ..onTap =
+                                    () =>
+                                        context.router.push(const AuthRoute()),
                         ),
                       ],
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                Center(
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontFamily: 'Forum',
+                        fontSize: 20,
+                        color: Colors.grey[400],
+                      ),
+                      children: [
+                        const TextSpan(text: 'Нет аккаунта?  '),
+                        TextSpan(
+                          text: 'Регистрация',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          recognizer:
+                              TapGestureRecognizer()
+                                ..onTap =
+                                    () => context.router.push(
+                                      const RegisterRoute(),
+                                    ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 const Spacer(),
               ],
             ),

@@ -17,7 +17,7 @@ class _StoriesSliderState extends State<StoriesSlider> {
       title: 'Новые квесты',
       subtitle: 'Откройте новые заклинания и способности',
       avatar:
-          'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=150&h=150&fit=crop&crop=face',
+          'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=150',
       color: const Color(0xFF5B2333),
       items: [
         StoryItem(
@@ -36,7 +36,7 @@ class _StoriesSliderState extends State<StoriesSlider> {
         StoryItem(
           type: StoryItemType.image,
           content:
-              'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
+              'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=',
           text: 'Каждый квест уникален',
           duration: 3,
         ),
@@ -166,99 +166,103 @@ class _StoriesSliderState extends State<StoriesSlider> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _stories.length,
-        itemBuilder: (context, index) {
-          final story = _stories[index];
-          return GestureDetector(
-            onTap: () => _showStoryView(context, story),
-            child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              child: Column(
-                children: [
-                  // Avatar with border
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [story.color, story.color.withOpacity(0.7)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: story.color.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
-                      child: Container(
-                        decoration: const BoxDecoration(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Новое в PATHFINDER',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 16),
+        Container(
+          height: 90,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _stories.length,
+            itemBuilder: (context, index) {
+              final story = _stories[index];
+              return GestureDetector(
+                onTap: () => _showStoryView(context, story),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white,
+                          gradient: LinearGradient(
+                            colors: [story.color, story.color.withOpacity(0.7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                         ),
-                        child: ClipOval(
-                          child: Image.network(
-                            story.avatar,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: story.color.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                                null
-                                            ? loadingProgress
-                                                    .cumulativeBytesLoaded /
-                                                loadingProgress
-                                                    .expectedTotalBytes!
-                                            : null,
-                                    color: story.color,
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: story.color.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 30,
-                                  color: story.color,
-                                ),
-                              );
-                            },
+                        child: Padding(
+                          padding: const EdgeInsets.all(3),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                story.avatar,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (
+                                  context,
+                                  child,
+                                  loadingProgress,
+                                ) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: story.color.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value:
+                                            loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                        .cumulativeBytesLoaded /
+                                                    loadingProgress
+                                                        .expectedTotalBytes!
+                                                : null,
+                                        color: story.color,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: story.color.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 30,
+                                      color: story.color,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  // Title removed as requested
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

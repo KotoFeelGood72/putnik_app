@@ -11,7 +11,7 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final routes = [HeroListRoute(), MainRoute(), ProfileRoute()];
+    final routes = [MainRoute(), HeroListRoute(), ProfileRoute()];
     return Container(
       color: AppColors.bg,
       child: AutoTabsScaffold(

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:putnik_app/present/components/button/btn.dart';
+import 'package:putnik_app/present/components/head/default_head.dart';
 
 import 'package:putnik_app/present/routes/app_router.dart';
 import 'package:putnik_app/present/theme/app_colors.dart';
@@ -74,26 +75,16 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Вход',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Войдите в аккаунт для управления и ведения персонажа в PATHFINDER',
-                style: TextStyle(fontSize: 20, color: Colors.grey[400]),
+              DefaultHead(
+                title: 'Вход',
+                description:
+                    'Войдите в аккаунт для управления и ведения персонажа в PATHFINDER',
               ),
               const SizedBox(height: 40),
 

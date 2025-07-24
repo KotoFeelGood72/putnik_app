@@ -7,12 +7,14 @@ class Btn extends StatelessWidget {
   final bool disabled;
   final bool loading;
   final double? buttonSize;
+  final double? textSize;
 
   const Btn({
     super.key,
     required this.text,
     this.onPressed,
     this.buttonSize = 70,
+    this.textSize = 32,
     this.disabled = false,
     this.loading = false,
   });
@@ -54,9 +56,9 @@ class Btn extends StatelessWidget {
                     )
                     : Text(
                       text,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 32,
+                        fontSize: textSize,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                         fontFamily: 'Forum',

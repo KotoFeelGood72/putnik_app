@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:putnik_app/present/components/button/btn.dart';
 import '../../../models/hero_model.dart';
 import 'hero_detail_screen.dart';
 import 'create_hero_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_colors.dart';
 import 'dart:io';
+import '../../components/cards/hero_card.dart';
 
 @RoutePage()
 class HeroListScreen extends StatefulWidget {
@@ -122,8 +124,6 @@ class _HeroListScreenState extends State<HeroListScreen> {
   }
 
   void _editHero(HeroModel hero) {
-    // Здесь можно добавить навигацию к экрану редактирования
-    // Пока что просто показываем сообщение
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Редактирование персонажа "${hero.name}"')),
     );
@@ -135,7 +135,10 @@ class _HeroListScreenState extends State<HeroListScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const Text('Мои персонажи', style: TextStyle(fontSize: 18)),
+            title: const Text(
+              'Мои персонажи',
+              style: TextStyle(fontSize: 20, fontFamily: 'Forum'),
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.search, color: Colors.white),
@@ -234,49 +237,36 @@ class _HeroListScreenState extends State<HeroListScreen> {
                                   (_, __) => const SizedBox(height: 16),
                               itemBuilder: (context, index) {
                                 final hero = filteredHeroes[index];
-                                return _buildHeroCard(hero);
+                                return HeroCard(
+                                  hero: hero,
+                                  onTap: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => HeroDetailScreen(hero: hero),
+                                      ),
+                                    );
+                                    await _loadHeroes();
+                                  },
+                                  onEdit: () => _editHero(hero),
+                                  onDelete: () => _showDeleteDialog(hero),
+                                );
                               },
                             ),
                           ),
                           // Кнопка добавления персонажа
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(top: 16),
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const CreateHeroScreen(),
-                                  ),
-                                );
-                                await _loadHeroes();
-                              },
-                              icon: const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              label: const Text(
-                                'Создать персонажа',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                          Btn(
+                            text: 'Создать персонажа',
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CreateHeroScreen(),
                                 ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 4,
-                              ),
-                            ),
+                              );
+                              await _loadHeroes();
+                            },
                           ),
                         ],
                       ),
@@ -351,288 +341,6 @@ class _HeroListScreenState extends State<HeroListScreen> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildHeroCard(HeroModel hero) {
-    return Slidable(
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          SlidableAction(
-            onPressed: (_) => _editHero(hero),
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            icon: Icons.edit,
-            label: 'Изменить',
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              bottomLeft: Radius.circular(16),
-            ),
-          ),
-          SlidableAction(
-            onPressed: (_) => _showDeleteDialog(hero),
-            backgroundColor: AppColors.error,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Удалить',
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-          ),
-        ],
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => HeroDetailScreen(hero: hero)),
-            );
-            await _loadHeroes();
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Верхняя часть с изображением и основной информацией
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Изображение героя
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child:
-                            hero.photoPath != null && hero.photoPath!.isNotEmpty
-                                ? (hero.photoPath!.startsWith('http')
-                                    ? Image.network(
-                                      hero.photoPath!,
-                                      fit: BoxFit.cover,
-                                      width: 60,
-                                      height: 60,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Center(
-                                                child: Text(
-                                                  hero.name.isNotEmpty
-                                                      ? hero.name[0]
-                                                          .toUpperCase()
-                                                      : '?',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 28,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                    )
-                                    : Image.file(
-                                      File(hero.photoPath!),
-                                      fit: BoxFit.cover,
-                                      width: 60,
-                                      height: 60,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Center(
-                                                child: Text(
-                                                  hero.name.isNotEmpty
-                                                      ? hero.name[0]
-                                                          .toUpperCase()
-                                                      : '?',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 28,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                    ))
-                                : Center(
-                                  child: Text(
-                                    hero.name.isNotEmpty
-                                        ? hero.name[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Основная информация
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            hero.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  hero.race,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.amber.withOpacity(0.5),
-                                  ),
-                                ),
-                                child: Text(
-                                  hero.characterClass,
-                                  style: const TextStyle(
-                                    color: Colors.amber,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.green.withOpacity(0.5),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Ур. ${hero.level}',
-                                  style: const TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white.withOpacity(0.5),
-                      size: 16,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // Сетка характеристик
-                Row(
-                  children: [
-                    Expanded(child: _buildStatItem('Сил', hero.strength)),
-                    Expanded(child: _buildStatItem('Лов', hero.dexterity)),
-                    Expanded(child: _buildStatItem('Вын', hero.constitution)),
-                    Expanded(child: _buildStatItem('Инт', hero.intelligence)),
-                    Expanded(child: _buildStatItem('Мдр', hero.wisdom)),
-                    Expanded(child: _buildStatItem('Хар', hero.charisma)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, int value) {
-    return Container(
-      margin: const EdgeInsets.only(right: 6),
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[300],
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            value.toString(),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
