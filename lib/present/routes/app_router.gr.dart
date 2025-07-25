@@ -88,48 +88,18 @@ class ChatRouteArgs {
 
 /// generated route for
 /// [CreateHeroScreen]
-class CreateHeroRoute extends PageRouteInfo<CreateHeroRouteArgs> {
-  CreateHeroRoute({Key? key, HeroModel? hero, List<PageRouteInfo>? children})
-    : super(
-        CreateHeroRoute.name,
-        args: CreateHeroRouteArgs(key: key, hero: hero),
-        initialChildren: children,
-      );
+class CreateHeroRoute extends PageRouteInfo<void> {
+  const CreateHeroRoute({List<PageRouteInfo>? children})
+    : super(CreateHeroRoute.name, initialChildren: children);
 
   static const String name = 'CreateHeroRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<CreateHeroRouteArgs>(
-        orElse: () => const CreateHeroRouteArgs(),
-      );
-      return CreateHeroScreen(key: args.key, hero: args.hero);
+      return const CreateHeroScreen();
     },
   );
-}
-
-class CreateHeroRouteArgs {
-  const CreateHeroRouteArgs({this.key, this.hero});
-
-  final Key? key;
-
-  final HeroModel? hero;
-
-  @override
-  String toString() {
-    return 'CreateHeroRouteArgs{key: $key, hero: $hero}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! CreateHeroRouteArgs) return false;
-    return key == other.key && hero == other.hero;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ hero.hashCode;
 }
 
 /// generated route for

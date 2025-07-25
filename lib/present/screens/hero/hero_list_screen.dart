@@ -1,16 +1,14 @@
-import 'dart:convert';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
+
+import 'package:putnik_app/present/components/app/new_appbar.dart';
 import 'package:putnik_app/present/components/button/btn.dart';
 import '../../../models/hero_model.dart';
 import 'hero_detail_screen.dart';
 import 'create_hero_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_colors.dart';
-import 'dart:io';
 import '../../components/cards/hero_card.dart';
 
 @RoutePage()
@@ -134,11 +132,8 @@ class _HeroListScreenState extends State<HeroListScreen> {
     return Stack(
       children: [
         Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'Мои персонажи',
-              style: TextStyle(fontSize: 20, fontFamily: 'Forum'),
-            ),
+          appBar: NewAppBar(
+            title: 'Мои персонажи',
             actions: [
               IconButton(
                 icon: const Icon(Icons.search, color: Colors.white),

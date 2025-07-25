@@ -94,6 +94,9 @@ class HeroModel {
   // Языки
   List<String> languages;
 
+  // Черты
+  List<Map<String, dynamic>> feats;
+
   HeroModel({
     this.id,
     required this.name,
@@ -154,6 +157,7 @@ class HeroModel {
     required this.weapons,
     required this.languages,
     required this.skillDetails,
+    required this.feats,
   });
 
   Map<String, dynamic> toJson() => {
@@ -216,6 +220,7 @@ class HeroModel {
     'weapons': weapons,
     'languages': languages,
     'skillDetails': skillDetails.map((s) => s.toJson()).toList(),
+    'feats': feats,
   };
 
   factory HeroModel.fromJson(Map<String, dynamic> json, {String? id}) {
@@ -602,6 +607,7 @@ class HeroModel {
               ?.map((s) => SkillModel.fromJson(s as Map<String, dynamic>))
               .toList() ??
           defaultSkillDetails,
+      feats: List<Map<String, dynamic>>.from(json['feats'] as List? ?? []),
     );
   }
 }

@@ -53,7 +53,7 @@ class CustomBottomSheetSelect extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  value.isNotEmpty ? value : label,
+                  value.isNotEmpty ? value : 'Не выбрано',
                   style: TextStyle(
                     color: value.isNotEmpty ? Colors.white : Colors.grey,
                     fontSize: 14,
@@ -177,7 +177,7 @@ class _BottomSheetSelectContentState extends State<_BottomSheetSelectContent> {
                             final item = filteredItems[index];
                             return ListTile(
                               title: Text(
-                                item,
+                                item.isEmpty ? 'Не выбрано' : item,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,

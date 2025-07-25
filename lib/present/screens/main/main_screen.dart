@@ -63,7 +63,7 @@ class MainScreen extends ConsumerWidget {
                             const SizedBox(height: 16),
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                                // horizontal: 12,
                               ),
                               child: GridView.builder(
                                 shrinkWrap: true,

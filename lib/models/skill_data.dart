@@ -10,6 +10,7 @@ class SkillData {
   final int points;
   final int bonus;
   final String skillValue;
+  final bool isAvailable; // Доступен ли навык для изучения
 
   SkillData({
     required this.name,
@@ -21,6 +22,7 @@ class SkillData {
     this.points = 0,
     this.bonus = 0,
     this.skillValue = '',
+    this.isAvailable = true,
   });
 
   SkillData copyWith({
@@ -33,6 +35,7 @@ class SkillData {
     int? points,
     int? bonus,
     String? skillValue,
+    bool? isAvailable,
   }) {
     return SkillData(
       name: name ?? this.name,
@@ -44,6 +47,7 @@ class SkillData {
       points: points ?? this.points,
       bonus: bonus ?? this.bonus,
       skillValue: skillValue ?? this.skillValue,
+      isAvailable: isAvailable ?? this.isAvailable,
     );
   }
 
@@ -70,5 +74,14 @@ class SkillData {
     }
   }
 
-  int get total => modifier + points + bonus;
+  int get total {
+    int total = modifier + points + bonus;
+
+    // Если навык классовый и в нем есть хотя бы 1 пункт, добавляем +3
+    if (isClassSkill && points > 0) {
+      total += 3;
+    }
+
+    return total;
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:putnik_app/present/components/app/new_appbar.dart';
 import 'package:putnik_app/present/components/button/btn.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:putnik_app/services/providers/pathfinder_provider.dart';
@@ -11,9 +12,7 @@ import 'package:putnik_app/present/components/inputs/custom_bottom_sheet_select.
 
 @RoutePage()
 class CreateHeroScreen extends StatefulWidget {
-  final HeroModel? hero; // Optional hero for editing
-
-  const CreateHeroScreen({super.key, this.hero});
+  const CreateHeroScreen({super.key});
 
   @override
   State<CreateHeroScreen> createState() => _CreateHeroScreenState();
@@ -70,49 +69,11 @@ class _CreateHeroScreenState extends State<CreateHeroScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.hero != null) {
-      _populateFormWithHero(widget.hero!);
-    }
-  }
-
-  void _populateFormWithHero(HeroModel hero) {
-    setState(() {
-      name = hero.name;
-      race = hero.race;
-      characterClass =
-          hero.characterClass; // Assuming characterClass is stored as a string
-      alignment =
-          alignments.contains(hero.alignment)
-              ? hero.alignment
-              : alignments.first;
-      deity = hero.deity;
-      homeland = hero.homeland;
-      gender = genders.contains(hero.gender) ? hero.gender : genders.first;
-      age = int.tryParse(hero.age) ?? 18;
-      ageStr = hero.age;
-      level = int.tryParse(hero.level) ?? 1;
-      levelStr = hero.level;
-      maxHitPoints = hero.maxHp;
-      currentHitPoints = hero.currentHp;
-      height = hero.height;
-      weight = hero.weight;
-      hair = hero.hair;
-      eyes = hero.eyes;
-      size = hero.size;
-      strength = hero.strength;
-      dexterity = hero.dexterity;
-      constitution = hero.constitution;
-      intelligence = hero.intelligence;
-      wisdom = hero.wisdom;
-      charisma = hero.charisma;
-      skills = Map.from(hero.skills);
-      languages = List<String>.from(hero.languages);
-    });
   }
 
   Future<void> _saveHero() async {
     final hero = HeroModel(
-      id: widget.hero?.id,
+      id: null,
       name: name,
       race: race,
       characterClass: characterClass,
@@ -140,26 +101,18 @@ class _CreateHeroScreenState extends State<CreateHeroScreen> {
       weapons: const [],
       languages: languages,
       skillDetails: const [],
+      feats: const [],
     );
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (widget.hero != null && widget.hero!.id != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('heroes')
-          .doc(widget.hero!.id)
-          .update(hero.toJson());
-    } else {
-      final docRef = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('heroes')
-          .add(hero.toJson());
-      hero.id = docRef.id;
-    }
+    final docRef = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('heroes')
+        .add(hero.toJson());
+    hero.id = docRef.id;
 
     if (mounted) {
       Navigator.pop(context, hero);
@@ -170,21 +123,7 @@ class _CreateHeroScreenState extends State<CreateHeroScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
-        title: Text(
-          widget.hero != null
-              ? 'Редактирование персонажа'
-              : 'Создание персонажа',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
+      appBar: NewAppBar(title: 'Создание персонажа'),
       body: Consumer(
         builder: (context, ref, _) {
           final asyncArchetypes = ref.watch(pathfinderArchetypesProvider);
@@ -231,7 +170,6 @@ class _CreateHeroScreenState extends State<CreateHeroScreen> {
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 12,
                             children: [
                               Row(
                                 children: [

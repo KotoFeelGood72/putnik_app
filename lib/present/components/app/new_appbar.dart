@@ -30,7 +30,7 @@ class NewAppBar extends StatelessWidget implements PreferredSizeWidget {
               ? IconButton(
                 icon: IconWidget(
                   iconName: 'back',
-                  size: 34,
+                  size: 28,
                   color: AppColors.white,
                 ),
                 onPressed: onBack ?? () => Navigator.of(context).pop(),
@@ -40,9 +40,10 @@ class NewAppBar extends StatelessWidget implements PreferredSizeWidget {
         title,
         style: const TextStyle(
           color: AppColors.white,
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
+          fontFamily: 'Forum',
         ),
       ),
       actions: actions,
