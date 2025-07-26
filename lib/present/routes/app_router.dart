@@ -20,6 +20,7 @@ import 'package:putnik_app/present/screens/notes/edit_note_screen.dart';
 import 'package:putnik_app/present/screens/notes/notes_list_screen.dart';
 import 'package:putnik_app/present/screens/profile/profile_edit_screen.dart';
 import 'package:putnik_app/present/screens/profile/profile_screen.dart';
+import 'package:putnik_app/present/screens/shop/shop_screen.dart';
 import 'package:putnik_app/present/screens/static/welcome_screen.dart';
 import 'package:putnik_app/present/screens/static/start_screen.dart';
 import 'package:putnik_app/present/screens/glossary/glossary_screen.dart';
@@ -91,6 +92,7 @@ class AppRouter extends RootStackRouter {
       guards: [authGuard],
     ),
     AutoRoute(page: GlossaryRoute.page, path: '/glossary', guards: [authGuard]),
+    AutoRoute(page: ShopRoute.page, path: '/shop', guards: [authGuard]),
     AutoRoute(page: FeaturesStatusRoute.page, path: '/debug/features'),
   ];
 }

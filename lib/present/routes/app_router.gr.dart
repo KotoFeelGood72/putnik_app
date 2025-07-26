@@ -389,6 +389,22 @@ class ResetPasswordRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [ShopScreen]
+class ShopRoute extends PageRouteInfo<void> {
+  const ShopRoute({List<PageRouteInfo>? children})
+    : super(ShopRoute.name, initialChildren: children);
+
+  static const String name = 'ShopRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ShopScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [StartScreen]
 class StartRoute extends PageRouteInfo<void> {
   const StartRoute({List<PageRouteInfo>? children})

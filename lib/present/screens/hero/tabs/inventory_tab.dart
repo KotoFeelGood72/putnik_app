@@ -11,8 +11,8 @@ class InventoryTab extends StatefulWidget {
   final List<Map<String, dynamic>> weapons;
   final List<Map<String, dynamic>> armors;
   final List<Map<String, dynamic>> goods;
-  final List<WeaponModel> allWeapons;
-  final List<ArmorModel> allArmors;
+  final List<WeaponModel>? allWeapons;
+  final List<ArmorModel>? allArmors;
   final int copperCoins;
   final int silverCoins;
   final int goldCoins;
@@ -32,8 +32,8 @@ class InventoryTab extends StatefulWidget {
     required this.weapons,
     required this.armors,
     required this.goods,
-    required this.allWeapons,
-    required this.allArmors,
+    this.allWeapons,
+    this.allArmors,
     required this.copperCoins,
     required this.silverCoins,
     required this.goldCoins,

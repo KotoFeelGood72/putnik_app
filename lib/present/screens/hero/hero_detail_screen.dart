@@ -21,15 +21,11 @@ import 'package:putnik_app/present/screens/hero/input_field.dart';
 import '../../../utils/modal_utils.dart';
 import '../../../services/pathfinder_repository.dart';
 import 'tabs/main_tab.dart';
-import 'tabs/defense_tab.dart';
-import 'tabs/attack_tab.dart';
+import 'tabs/combat_tab.dart';
 import 'tabs/skills_tab.dart';
 import 'tabs/inventory_tab.dart';
 
 import 'tabs/feats_tab.dart';
-import 'tabs/weapons_tab.dart';
-import 'package:putnik_app/models/armor_model.dart';
-import 'package:putnik_app/services/armors_service.dart';
 
 @RoutePage()
 class HeroDetailScreen extends StatefulWidget {
@@ -48,8 +44,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
 
   List<SkillData> _skills = [];
   List<FeatModel> _allFeats = [];
-  List<WeaponModel> _allWeapons = [];
-  List<ArmorModel> _allArmors = [];
+
   late PathfinderRepository _pathfinderRepository;
 
   // Abilities to-do list state management
@@ -77,8 +72,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     _pathfinderRepository = PathfinderRepository();
     _initializeSkills(); // Вызываем асинхронно
     _initializeFeats(); // Загружаем черты
-    _initializeWeapons(); // Загружаем оружие
-    _initializeArmors(); // Загружаем доспехи
   }
 
   Future<void> _initializeSkills() async {
@@ -92,28 +85,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
       setState(() {});
     } catch (e) {
       print('Ошибка загрузки черт: $e');
-    }
-  }
-
-  Future<void> _initializeWeapons() async {
-    try {
-      print('Начинаем загрузку оружия...');
-      _allWeapons = await WeaponsService.getAllWeapons();
-      print('Оружие загружено: ${_allWeapons.length} штук');
-      setState(() {});
-    } catch (e) {
-      print('Ошибка загрузки оружия: $e');
-    }
-  }
-
-  Future<void> _initializeArmors() async {
-    try {
-      print('Начинаем загрузку доспехов...');
-      _allArmors = await ArmorsService.getAllArmors();
-      print('Доспехи загружены: ${_allArmors.length} штук');
-      setState(() {});
-    } catch (e) {
-      print('Ошибка загрузки доспехов: $e');
     }
   }
 
@@ -168,12 +139,10 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                   child: Row(
                     children: [
                       _buildTabButton('Основное', 0),
-                      _buildTabButton('Защита', 1),
-                      _buildTabButton('Атака', 2),
-                      _buildTabButton('Навыки', 3),
-                      _buildTabButton('Инвентарь', 4),
-                      _buildTabButton('Магазин', 5),
-                      _buildTabButton('Черты', 6),
+                      _buildTabButton('Бой', 1),
+                      _buildTabButton('Навыки', 2),
+                      _buildTabButton('Инвентарь', 3),
+                      _buildTabButton('Черты', 4),
                     ],
                   ),
                 ),
@@ -191,12 +160,9 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         onShowSaveEditModal: _showSaveEditModal,
                         onShowSpeedEditModal: _showSpeedEditModal,
                       ),
-                      DefenseTab(
+                      CombatTab(
                         hero: _currentHero,
                         onShowDefenseEditModal: _showDefenseEditModal,
-                      ),
-                      AttackTab(
-                        hero: _currentHero,
                         onShowInitiativeEditModal: _showInitiativeEditModal,
                         onShowBMAEditModal: _showBMAEditModal,
                         onShowMBMFormulaModal: _showMBMFormulaModal,
@@ -220,8 +186,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                         weapons: _currentHero.weapons,
                         armors: _currentHero.armors ?? [],
                         goods: _currentHero.goods ?? [],
-                        allWeapons: _allWeapons,
-                        allArmors: _allArmors,
+
                         copperCoins: _currentHero.copperCoins,
                         silverCoins: _currentHero.silverCoins,
                         goldCoins: _currentHero.goldCoins,
@@ -267,45 +232,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                           updateHeroInFirebase(_currentHero);
                         },
                       ),
-                      _allWeapons.isEmpty
-                          ? const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                          : WeaponsTab(
-                            key: ValueKey('weapons_${_allWeapons.length}'),
-                            weapons: _currentHero.weapons,
-                            onWeaponsChanged: (weapons) {
-                              setState(() {
-                                _currentHero.weapons = weapons;
-                              });
-                              updateHeroInFirebase(_currentHero);
-                            },
-                            allWeapons: _allWeapons,
-                            allArmors: _allArmors,
-                            armors: _currentHero.armors ?? [],
-                            onArmorsChanged: (armors) {
-                              setState(() {
-                                _currentHero.armors = armors;
-                              });
-                              updateHeroInFirebase(_currentHero);
-                            },
-                            goods: _currentHero.goods ?? [],
-                            onGoodsChanged: (goods) {
-                              setState(() {
-                                _currentHero.goods = goods;
-                              });
-                              updateHeroInFirebase(_currentHero);
-                            },
-                            copperCoins: _currentHero.copperCoins,
-                            silverCoins: _currentHero.silverCoins,
-                            goldCoins: _currentHero.goldCoins,
-                            platinumCoins: _currentHero.platinumCoins,
-                            onSpendMoney: _tryBuyItem,
-                          ),
                       FeatsTab(
                         feats: _currentHero.feats,
                         onFeatsChanged: (feats) {
@@ -1318,15 +1244,14 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     );
   }
 
-  void _showDefenseEditModal(
-    String defenseType,
-    int armorBonus,
-    int shieldBonus,
-    int naturalArmor,
-    int deflectionBonus,
-    int miscACBonus,
-    int sizeModifier,
-  ) {
+  void _showDefenseEditModal(BuildContext context) {
+    // Инициализируем значения из текущего героя
+    int armorBonus = _currentHero.armorBonus ?? 0;
+    int shieldBonus = _currentHero.shieldBonus ?? 0;
+    int naturalArmor = _currentHero.naturalArmor ?? 0;
+    int deflectionBonus = _currentHero.deflectionBonus ?? 0;
+    int miscACBonus = _currentHero.miscACBonus ?? 0;
+    int sizeModifier = _currentHero.sizeModifier ?? 0;
     // Контент для редактирования защиты
     Widget defenseContent = StatefulBuilder(
       builder: (context, setModalState) {
@@ -1483,7 +1408,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     // Показываем модальное окно
     ModalUtils.showDefenseEditModal(
       context: context,
-      defenseName: defenseType,
+      defenseName: 'Защита',
       defenseContent: defenseContent,
       onSave: () async {
         _updateHeroDefense(

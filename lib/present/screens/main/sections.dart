@@ -40,6 +40,12 @@ final List<SectionData> sections = [
     Color(0xFF483D8B),
     Color(0xFF6A5ACD),
   ),
+  SectionData(
+    'Магазин',
+    Icons.shopping_cart,
+    Color(0xFF8B4513),
+    Color(0xFFD2691E),
+  ),
 ];
 
 class SectionCard extends StatefulWidget {
@@ -71,6 +77,8 @@ class _SectionCardState extends State<SectionCard> {
             context.router.push(GalarionMapRoute());
           } else if (widget.section.title == 'Чаты') {
             context.router.push(ChatListRoute());
+          } else if (widget.section.title == 'Магазин') {
+            context.router.push(ShopRoute());
           }
           // TODO: Навигация в другие разделы
         },
