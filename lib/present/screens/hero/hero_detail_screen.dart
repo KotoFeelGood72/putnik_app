@@ -28,6 +28,8 @@ import 'tabs/inventory_tab.dart';
 
 import 'tabs/feats_tab.dart';
 import 'tabs/weapons_tab.dart';
+import 'package:putnik_app/models/armor_model.dart';
+import 'package:putnik_app/services/armors_service.dart';
 
 @RoutePage()
 class HeroDetailScreen extends StatefulWidget {
@@ -47,6 +49,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   List<SkillData> _skills = [];
   List<FeatModel> _allFeats = [];
   List<WeaponModel> _allWeapons = [];
+  List<ArmorModel> _allArmors = [];
   late PathfinderRepository _pathfinderRepository;
 
   // Abilities to-do list state management
@@ -54,7 +57,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   // Traits to-do list state management
 
   // Inventory state management
-  List<Map<String, dynamic>> _equipment = [];
   final TextEditingController _equipmentNameController =
       TextEditingController();
   final TextEditingController _equipmentWeightController =
@@ -68,12 +70,6 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   int _liftOffGround = 0;
   int _pushOrDrag = 0;
 
-  // Currency values
-  int _copperCoins = 0;
-  int _silverCoins = 0;
-  int _goldCoins = 0;
-  int _platinumCoins = 0;
-
   @override
   void initState() {
     super.initState();
@@ -82,6 +78,7 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     _initializeSkills(); // Вызываем асинхронно
     _initializeFeats(); // Загружаем черты
     _initializeWeapons(); // Загружаем оружие
+    _initializeArmors(); // Загружаем доспехи
   }
 
   Future<void> _initializeSkills() async {
@@ -109,6 +106,17 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
     }
   }
 
+  Future<void> _initializeArmors() async {
+    try {
+      print('Начинаем загрузку доспехов...');
+      _allArmors = await ArmorsService.getAllArmors();
+      print('Доспехи загружены: ${_allArmors.length} штук');
+      setState(() {});
+    } catch (e) {
+      print('Ошибка загрузки доспехов: $e');
+    }
+  }
+
   @override
   void dispose() {
     _equipmentNameController.dispose();
@@ -118,113 +126,203 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF1A1A1A),
+        body: Center(
+          child: Text(
+            'Пользователь не найден',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       appBar: NewAppBar(title: 'Лист персонажа'),
-      body: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            // Кастомные табы
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildTabButton('Основное', 0),
-                  _buildTabButton('Защита', 1),
-                  _buildTabButton('Атака', 2),
-                  _buildTabButton('Навыки', 3),
-                  _buildTabButton('Инвентарь', 4),
-                  _buildTabButton('Оружие', 5),
-                  _buildTabButton('Черты', 6),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Контент таба
-            Expanded(
-              child: IndexedStack(
-                index: _selectedTabIndex,
-                children: [
-                  MainTab(
-                    hero: _currentHero,
-                    onShowHpEditModal: _showHpEditModal,
-                    onShowEditHeroModal: _showEditHeroModal,
-                    onShowAbilityEditModal: _showAbilityEditModal,
-                    onShowSaveEditModal: _showSaveEditModal,
-                    onShowSpeedEditModal: _showSpeedEditModal,
+      body: StreamBuilder<DocumentSnapshot>(
+        stream:
+            FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('heroes')
+                .doc(_currentHero.id)
+                .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data!.exists) {
+            // Обновляем данные героя из Firebase
+            final heroData = snapshot.data!.data() as Map<String, dynamic>;
+            _currentHero = HeroModel.fromJson(heroData, id: _currentHero.id);
+          }
+
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                // Кастомные табы
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildTabButton('Основное', 0),
+                      _buildTabButton('Защита', 1),
+                      _buildTabButton('Атака', 2),
+                      _buildTabButton('Навыки', 3),
+                      _buildTabButton('Инвентарь', 4),
+                      _buildTabButton('Магазин', 5),
+                      _buildTabButton('Черты', 6),
+                    ],
                   ),
-                  DefenseTab(
-                    hero: _currentHero,
-                    onShowDefenseEditModal: _showDefenseEditModal,
-                  ),
-                  AttackTab(
-                    hero: _currentHero,
-                    onShowInitiativeEditModal: _showInitiativeEditModal,
-                    onShowBMAEditModal: _showBMAEditModal,
-                    onShowMBMFormulaModal: _showMBMFormulaModal,
-                    onShowZBMFormulaModal: _showZBMFormulaModal,
-                  ),
-                  SkillsTab(
-                    skills: _skills,
-                    heroClass: _currentHero.characterClass,
-                    onShowSkillEditModal: _showSkillEditModal,
-                    onShowAddCustomSkillModal: _showAddCustomSkillModal,
-                    onToggleClassSkill: (index) {
-                      setState(() {
-                        _skills[index] = _skills[index].copyWith(
-                          isClassSkill: !_skills[index].isClassSkill,
-                        );
-                      });
-                    },
-                  ),
-                  InventoryTab(
-                    equipment: _equipment,
-                    copperCoins: _copperCoins,
-                    silverCoins: _silverCoins,
-                    goldCoins: _goldCoins,
-                    platinumCoins: _platinumCoins,
-                    onShowAddEquipmentModal: _showAddEquipmentModal,
-                    onShowLoadEditModal: _showLoadEditModal,
-                    onRemoveEquipment: _removeEquipment,
-                    onEditCurrency: _editCurrency,
-                  ),
-                  _allWeapons.isEmpty
-                      ? const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                      : WeaponsTab(
-                        key: ValueKey(
-                          'weapons_${_allWeapons.length}',
-                        ), // Принудительное обновление при изменении данных
+                ),
+                const SizedBox(height: 12),
+                // Контент таба
+                Expanded(
+                  child: IndexedStack(
+                    index: _selectedTabIndex,
+                    children: [
+                      MainTab(
+                        hero: _currentHero,
+                        onShowHpEditModal: _showHpEditModal,
+                        onShowEditHeroModal: _showEditHeroModal,
+                        onShowAbilityEditModal: _showAbilityEditModal,
+                        onShowSaveEditModal: _showSaveEditModal,
+                        onShowSpeedEditModal: _showSpeedEditModal,
+                      ),
+                      DefenseTab(
+                        hero: _currentHero,
+                        onShowDefenseEditModal: _showDefenseEditModal,
+                      ),
+                      AttackTab(
+                        hero: _currentHero,
+                        onShowInitiativeEditModal: _showInitiativeEditModal,
+                        onShowBMAEditModal: _showBMAEditModal,
+                        onShowMBMFormulaModal: _showMBMFormulaModal,
+                        onShowZBMFormulaModal: _showZBMFormulaModal,
+                      ),
+                      SkillsTab(
+                        skills: _skills,
+                        heroClass: _currentHero.characterClass,
+                        onShowSkillEditModal: _showSkillEditModal,
+                        onShowAddCustomSkillModal: _showAddCustomSkillModal,
+                        onToggleClassSkill: (index) {
+                          setState(() {
+                            _skills[index] = _skills[index].copyWith(
+                              isClassSkill: !_skills[index].isClassSkill,
+                            );
+                          });
+                        },
+                      ),
+                      InventoryTab(
+                        equipment: _currentHero.equipment,
                         weapons: _currentHero.weapons,
+                        armors: _currentHero.armors ?? [],
+                        goods: _currentHero.goods ?? [],
+                        allWeapons: _allWeapons,
+                        allArmors: _allArmors,
+                        copperCoins: _currentHero.copperCoins,
+                        silverCoins: _currentHero.silverCoins,
+                        goldCoins: _currentHero.goldCoins,
+                        platinumCoins: _currentHero.platinumCoins,
+                        onShowAddEquipmentModal: _showAddEquipmentModal,
+                        onShowLoadEditModal: _showLoadEditModal,
+                        onRemoveEquipment: _removeEquipment,
+                        onEditCurrency: _editCurrency,
+                        onEquipmentChanged: (equipment) {
+                          print('=== onEquipmentChanged вызван ===');
+                          print('Новый список снаряжения: ${equipment.length}');
+                          setState(() {
+                            _currentHero.equipment = equipment;
+                          });
+                          print('Обновляем Firebase...');
+                          updateHeroInFirebase(_currentHero);
+                        },
                         onWeaponsChanged: (weapons) {
+                          print('=== onWeaponsChanged вызван ===');
+                          print('Новый список оружия: ${weapons.length}');
                           setState(() {
                             _currentHero.weapons = weapons;
                           });
+                          print('Обновляем Firebase...');
                           updateHeroInFirebase(_currentHero);
                         },
-                        allWeapons: _allWeapons,
+                        onArmorsChanged: (armors) {
+                          print('=== onArmorsChanged вызван ===');
+                          print('Новый список доспехов: ${armors.length}');
+                          setState(() {
+                            _currentHero.armors = armors;
+                          });
+                          print('Обновляем Firebase...');
+                          updateHeroInFirebase(_currentHero);
+                        },
+                        onGoodsChanged: (goods) {
+                          print('=== onGoodsChanged вызван ===');
+                          print('Новый список товаров: ${goods.length}');
+                          setState(() {
+                            _currentHero.goods = goods;
+                          });
+                          print('Обновляем Firebase...');
+                          updateHeroInFirebase(_currentHero);
+                        },
                       ),
-                  FeatsTab(
-                    feats: _currentHero.feats,
-                    onFeatsChanged: (feats) {
-                      setState(() {
-                        _currentHero.feats = feats;
-                      });
-                      updateHeroInFirebase(_currentHero);
-                    },
-                    allFeats: _allFeats,
+                      _allWeapons.isEmpty
+                          ? const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : WeaponsTab(
+                            key: ValueKey('weapons_${_allWeapons.length}'),
+                            weapons: _currentHero.weapons,
+                            onWeaponsChanged: (weapons) {
+                              setState(() {
+                                _currentHero.weapons = weapons;
+                              });
+                              updateHeroInFirebase(_currentHero);
+                            },
+                            allWeapons: _allWeapons,
+                            allArmors: _allArmors,
+                            armors: _currentHero.armors ?? [],
+                            onArmorsChanged: (armors) {
+                              setState(() {
+                                _currentHero.armors = armors;
+                              });
+                              updateHeroInFirebase(_currentHero);
+                            },
+                            goods: _currentHero.goods ?? [],
+                            onGoodsChanged: (goods) {
+                              setState(() {
+                                _currentHero.goods = goods;
+                              });
+                              updateHeroInFirebase(_currentHero);
+                            },
+                            copperCoins: _currentHero.copperCoins,
+                            silverCoins: _currentHero.silverCoins,
+                            goldCoins: _currentHero.goldCoins,
+                            platinumCoins: _currentHero.platinumCoins,
+                            onSpendMoney: _tryBuyItem,
+                          ),
+                      FeatsTab(
+                        feats: _currentHero.feats,
+                        onFeatsChanged: (feats) {
+                          setState(() {
+                            _currentHero.feats = feats;
+                          });
+                          updateHeroInFirebase(_currentHero);
+                        },
+                        allFeats: _allFeats,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -442,8 +540,9 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
           (context) => AddEquipmentModal(
             onAddEquipment: (name, weight) {
               setState(() {
-                _equipment.add({'name': name, 'weight': weight});
+                _currentHero.equipment.add({'name': name, 'weight': weight});
               });
+              updateHeroInFirebase(_currentHero);
             },
           ),
     );
@@ -451,8 +550,9 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
 
   void _removeEquipment(int index) {
     setState(() {
-      _equipment.removeAt(index);
+      _currentHero.equipment.removeAt(index);
     });
+    updateHeroInFirebase(_currentHero);
   }
 
   // Методы для работы с модальными окнами
@@ -1763,20 +1863,206 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
   }
 
   void _editCurrency(String code) {
-    // TODO: Реализовать модальное окно редактирования валюты
+    int currentValue = 0;
+    switch (code) {
+      case 'ММ':
+        currentValue = _currentHero.copperCoins;
+        break;
+      case 'СМ':
+        currentValue = _currentHero.silverCoins;
+        break;
+      case 'ЗМ':
+        currentValue = _currentHero.goldCoins;
+        break;
+      case 'ПМ':
+        currentValue = _currentHero.platinumCoins;
+        break;
+    }
+
+    // Контент для редактирования валюты
+    Widget currencyContent = StatefulBuilder(
+      builder: (context, setModalState) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A2A2A),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Текущее количество: $currentValue',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              InputField(
+                placeholder: 'Введите новое количество',
+                initialValue: currentValue.toString(),
+                onChanged: (value) {
+                  currentValue = int.tryParse(value) ?? 0;
+                  setModalState(() {});
+                },
+                isNumber: true,
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    // Показываем модальное окно
+    ModalUtils.showCustomModal(
+      context: context,
+      title: 'Редактировать $code',
+      content: currencyContent,
+      maxHeightRatio: 0.4,
+      onSave: () async {
+        setState(() {
+          switch (code) {
+            case 'ММ':
+              _currentHero.copperCoins = currentValue;
+              break;
+            case 'СМ':
+              _currentHero.silverCoins = currentValue;
+              break;
+            case 'ЗМ':
+              _currentHero.goldCoins = currentValue;
+              break;
+            case 'ПМ':
+              _currentHero.platinumCoins = currentValue;
+              break;
+          }
+        });
+        await updateHeroInFirebase(_currentHero);
+      },
+    );
+  }
+
+  void _spendMoney({required int cost, required String currency}) {
+    setState(() {
+      switch (currency) {
+        case 'ЗМ':
+          if (_currentHero.goldCoins >= cost) {
+            _currentHero.goldCoins -= cost;
+          }
+          break;
+        case 'СМ':
+          if (_currentHero.silverCoins >= cost) {
+            _currentHero.silverCoins -= cost;
+          }
+          break;
+        case 'ММ':
+          if (_currentHero.copperCoins >= cost) {
+            _currentHero.copperCoins -= cost;
+          }
+          break;
+        case 'ПМ':
+          if (_currentHero.platinumCoins >= cost) {
+            _currentHero.platinumCoins -= cost;
+          }
+          break;
+      }
+    });
+    updateHeroInFirebase(_currentHero);
+  }
+
+  bool _canAfford({required int cost, required String currency}) {
+    switch (currency) {
+      case 'ЗМ':
+        return _currentHero.goldCoins >= cost;
+      case 'СМ':
+        return _currentHero.silverCoins >= cost;
+      case 'ММ':
+        return _currentHero.copperCoins >= cost;
+      case 'ПМ':
+        return _currentHero.platinumCoins >= cost;
+      default:
+        return false;
+    }
+  }
+
+  void _showNotEnoughMoneyDialog() {
+    ModalUtils.showCustomModal(
+      context: context,
+      title: 'Недостаточно монет',
+      content: const Text(
+        'У вас недостаточно монет для покупки этого предмета.',
+        style: TextStyle(color: Colors.white70, fontSize: 16),
+      ),
+      cancelButtonText: 'ПОНЯТНО',
+      saveButtonText: '',
+      onSave: () {},
+    );
+  }
+
+  void _addEquipmentFromShop(Map<String, dynamic> item) {
+    // Определяем тип предмета и добавляем в соответствующий список
+    setState(() {
+      if (item.containsKey('proficientCategory')) {
+        // Это оружие
+        _currentHero.weapons.add(item);
+      } else if (item.containsKey('armorType')) {
+        // Это доспех
+        if (_currentHero.armors == null) {
+          _currentHero.armors = [];
+        }
+        _currentHero.armors!.add(item);
+      } else if (item.containsKey('type')) {
+        // Это товар
+        if (_currentHero.goods == null) {
+          _currentHero.goods = [];
+        }
+        _currentHero.goods!.add(item);
+      } else {
+        // По умолчанию добавляем в equipment
+        _currentHero.equipment.add(item);
+      }
+    });
+    updateHeroInFirebase(_currentHero);
+  }
+
+  void _tryBuyItem({
+    required int cost,
+    required String currency,
+    required Map<String, dynamic> item,
+  }) {
+    if (_canAfford(cost: cost, currency: currency)) {
+      _spendMoney(cost: cost, currency: currency);
+      // Добавляем предмет в соответствующий список после успешной траты денег
+      _addEquipmentFromShop(item);
+    } else {
+      _showNotEnoughMoneyDialog();
+    }
   }
 
   // Метод для обновления героя в Firebase
   Future<void> updateHeroInFirebase(HeroModel hero) async {
     try {
+      print('=== updateHeroInFirebase ===');
+      print('ID героя: ${hero.id}');
+      print('Оружие: ${hero.weapons.length}');
+      print('Доспехи: ${hero.armors?.length ?? 0}');
+      print('Товары: ${hero.goods?.length ?? 0}');
+      print('Снаряжение: ${hero.equipment.length}');
+
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        print('Пользователь найден: ${user.uid}');
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .collection('heroes')
             .doc(hero.id)
             .update(hero.toJson());
+        print('Firebase обновлен успешно');
+      } else {
+        print('Пользователь не найден!');
       }
     } catch (e) {
       print('Ошибка при обновлении героя: $e');

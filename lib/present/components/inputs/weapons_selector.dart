@@ -443,7 +443,7 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  'Вес: ${weapon.weight} фн | Стоимость: ${weapon.cost} зм',
+                  'Вес: ${weapon.weight ?? "—"} фн | Стоимость: ${weapon.cost ?? "—"} зм',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 11,

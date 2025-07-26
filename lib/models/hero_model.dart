@@ -82,6 +82,21 @@ class HeroModel {
   // Оружие
   List<Map<String, dynamic>> weapons;
 
+  // Доспехи
+  List<Map<String, dynamic>> armors;
+
+  // Товары и услуги
+  List<Map<String, dynamic>> goods;
+
+  // Снаряжение
+  List<Map<String, dynamic>> equipment;
+
+  // Деньги
+  int copperCoins;
+  int silverCoins;
+  int goldCoins;
+  int platinumCoins;
+
   // Инициатива
   int? miscInitiativeBonus;
 
@@ -155,6 +170,13 @@ class HeroModel {
     this.miscInitiativeBonus,
     required this.skills,
     required this.weapons,
+    required this.armors,
+    required this.goods,
+    required this.equipment,
+    required this.copperCoins,
+    required this.silverCoins,
+    required this.goldCoins,
+    required this.platinumCoins,
     required this.languages,
     required this.skillDetails,
     required this.feats,
@@ -218,6 +240,13 @@ class HeroModel {
     'miscInitiativeBonus': miscInitiativeBonus,
     'skills': skills,
     'weapons': weapons,
+    'armors': armors,
+    'goods': goods,
+    'equipment': equipment,
+    'copperCoins': copperCoins,
+    'silverCoins': silverCoins,
+    'goldCoins': goldCoins,
+    'platinumCoins': platinumCoins,
     'languages': languages,
     'skillDetails': skillDetails.map((s) => s.toJson()).toList(),
     'feats': feats,
@@ -601,6 +630,13 @@ class HeroModel {
       miscInitiativeBonus: json['miscInitiativeBonus'] as int?,
       skills: Map<String, int>.from(json['skills'] as Map),
       weapons: List<Map<String, dynamic>>.from(json['weapons'] as List),
+      armors: List<Map<String, dynamic>>.from(json['armors'] as List? ?? []),
+      goods: List<Map<String, dynamic>>.from(json['goods'] as List? ?? []),
+      equipment: List<Map<String, dynamic>>.from(json['equipment'] as List? ?? []),
+      copperCoins: json['copperCoins'] as int? ?? 0,
+      silverCoins: json['silverCoins'] as int? ?? 0,
+      goldCoins: json['goldCoins'] as int? ?? 0,
+      platinumCoins: json['platinumCoins'] as int? ?? 0,
       languages: List<String>.from(json['languages'] as List),
       skillDetails:
           (json['skillDetails'] as List<dynamic>?)

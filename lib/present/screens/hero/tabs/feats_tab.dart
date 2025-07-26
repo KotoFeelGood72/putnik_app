@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/feat_model.dart';
 import '../../../../services/feats_service.dart';
-import '../../../components/inputs/feats_selector.dart';
-import '../../../components/button/btn.dart';
+import '../../../components/inputs/custom_bottom_sheet_select.dart';
 
 class FeatsTab extends StatefulWidget {
   final List<Map<String, dynamic>> feats;
@@ -22,20 +21,8 @@ class FeatsTab extends StatefulWidget {
 
 class _FeatsTabState extends State<FeatsTab> {
   List<FeatModel> _selectedFeats = [];
-
-  String _renderHtml(String? text) {
-    if (text == null) return '';
-    // Заменяем <a> теги на обычный текст, делая ссылки неактивными
-    return text
-        .replaceAllMapped(RegExp(r'<a[^>]*>(.*?)</a>', dotAll: true), (match) => match.group(1) ?? '') // Извлекаем только текст из ссылок
-        .replaceAll('&nbsp;', ' ') // Заменяем HTML пробелы
-        .replaceAll('&amp;', '&') // Заменяем HTML амперсанды
-        .replaceAll('&lt;', '<') // Заменяем HTML символы
-        .replaceAll('&gt;', '>')
-        .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'")
-        .trim(); // Убираем лишние пробелы
-  }
+  String _search = '';
+  String _selectedType = '';
 
   @override
   void initState() {
@@ -85,9 +72,25 @@ class _FeatsTabState extends State<FeatsTab> {
     }
   }
 
-  void _onFeatsChanged(List<FeatModel> newFeats) {
+  void _onRemoveFeat(FeatModel feat) {
+    setState(() {
+      _selectedFeats.removeWhere((f) => f.id == feat.id);
+      _saveSelection();
+    });
+  }
+
+  void _onAddFeat(FeatModel feat) {
+    setState(() {
+      if (!_selectedFeats.any((f) => f.id == feat.id)) {
+        _selectedFeats.add(feat);
+        _saveSelection();
+      }
+    });
+  }
+
+  void _saveSelection() {
     final featsData =
-        newFeats
+        _selectedFeats
             .map(
               (feat) => {
                 'id': feat.id,
@@ -106,191 +109,208 @@ class _FeatsTabState extends State<FeatsTab> {
               },
             )
             .toList();
-
     widget.onFeatsChanged(featsData);
+  }
+
+  List<String> get _allTypes {
+    final types =
+        widget.allFeats
+            .expand((f) => f.types.map((t) => t.name))
+            .toSet()
+            .toList();
+    types.sort();
+    return types;
+  }
+
+  List<FeatModel> get _filteredFeats {
+    final allFeats =
+        _selectedType == 'Мои черты' ? _selectedFeats : widget.allFeats;
+    return allFeats.where((feat) {
+      final matchesType =
+          _selectedType.isEmpty ||
+          _selectedType == 'Мои черты' ||
+          feat.types.any((t) => t.name == _selectedType);
+      final matchesSearch =
+          _search.isEmpty ||
+          feat.name.toLowerCase().contains(_search.toLowerCase()) ||
+          (feat.description?.toLowerCase().contains(_search.toLowerCase()) ??
+              false);
+      return matchesType && matchesSearch;
+    }).toList();
+  }
+
+  String _renderHtml(String? text) {
+    if (text == null) return '';
+    return text
+        .replaceAllMapped(
+          RegExp(r'<a[^>]*>(.*?)</a>', dotAll: true),
+          (match) => match.group(1) ?? '',
+        )
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .trim();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Заголовок секции
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Черты',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(
-                  width: 120,
-                  child: Btn(
-                    text: 'ДОБАВИТЬ',
-                    onPressed: () {
-                      // Селектор уже встроен в FeatsSelector
-                    },
-                    buttonSize: 40,
-                    textSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Селектор черт
-          FeatsSelector(
-            selectedFeats: _selectedFeats,
-            onFeatsChanged: _onFeatsChanged,
-            allFeats: widget.allFeats,
-          ),
-
-          const SizedBox(height: 20),
-
-          // Список выбранных черт
-          if (_selectedFeats.isNotEmpty) ...[
-            const Text(
-              'Выбранные черты',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ..._buildSelectedFeatsList(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildSelectedFeatsList() {
-    final groupedFeats = FeatsService.groupFeatsByType(_selectedFeats);
-    final widgets = <Widget>[];
-
-    for (final entry in groupedFeats.entries) {
-      widgets.add(
-        Container(
-          margin: const EdgeInsets.only(bottom: 16),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Заголовок типа
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5B2333),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      offset: const Offset(0, 2),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-                child: Text(
-                  entry.key,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+              TextField(
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Поиск черты...',
+                  hintStyle: const TextStyle(color: Colors.white54),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                  filled: true,
+                  fillColor: const Color(0xFF232323),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 8,
                   ),
                 ),
+                onChanged: (val) => setState(() => _search = val),
               ),
               const SizedBox(height: 8),
-
-              // Черты этого типа
-              ...entry.value.map((feat) => _buildFeatCard(feat)),
+              CustomBottomSheetSelect(
+                label: 'Тип черты',
+                value: _selectedType,
+                items: ['', 'Мои черты', ..._allTypes],
+                onChanged: (val) => setState(() => _selectedType = val),
+              ),
             ],
           ),
         ),
-      );
-    }
-
-    return widgets;
+        Expanded(
+          child:
+              _filteredFeats.isEmpty
+                  ? const Center(
+                    child: Text(
+                      'Ничего не найдено',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  )
+                  : ListView(
+                    children:
+                        _filteredFeats
+                            .map((feat) => _buildFeatCard(feat))
+                            .toList(),
+                  ),
+        ),
+      ],
+    );
   }
 
   Widget _buildFeatCard(FeatModel feat) {
+    final isSelected = _selectedFeats.any((f) => f.id == feat.id);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color:
+            isSelected
+                ? Colors.green.withOpacity(0.08)
+                : const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withOpacity(0.2),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Название черты
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  feat.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: null,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        feat.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white54,
+                          size: 20,
+                        ),
+                        onPressed: () => _onRemoveFeat(feat),
+                        tooltip: 'Убрать',
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(
+                          Icons.add_shopping_cart,
+                          color: Colors.white54,
+                          size: 20,
+                        ),
+                        onPressed: () => _onAddFeat(feat),
+                        tooltip: 'Добавить',
+                      ),
+                  ],
+                ),
+                if (feat.requirements != null &&
+                    feat.requirements!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Требования: ${_renderHtml(feat.requirements)}',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                if (feat.description != null &&
+                    feat.description!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _renderHtml(feat.description),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  feat.types.isNotEmpty ? feat.types.first.name : '',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 11,
                   ),
                 ),
-              ),
-              Text(
-                feat.book.abbreviation,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 10,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-
-          // Требования
-          if (feat.requirements != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Требования: ${_renderHtml(feat.requirements)}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-            ),
-          ],
-
-          // Описание
-          if (feat.description != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              _renderHtml(feat.description),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

@@ -63,9 +63,9 @@ class ModalUtils {
     required BuildContext context,
     required String title,
     required Widget content,
-    required VoidCallback onSave,
+    required VoidCallback? onSave,
     VoidCallback? onCancel,
-    String saveButtonText = 'СОХРАНИТЬ',
+    String? saveButtonText = 'СОХРАНИТЬ',
     String cancelButtonText = 'ОТМЕНА',
     bool isLoading = false,
     double maxHeightRatio = 0.8,
@@ -140,21 +140,22 @@ class ModalUtils {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: Btn(
-                                text: saveButtonText,
-                                onPressed:
-                                    isLoading
-                                        ? null
-                                        : () {
-                                          onSave();
-                                          Navigator.pop(context);
-                                        },
-                                buttonSize: 50,
-                                textSize: 16,
-                                loading: isLoading,
+                            if (saveButtonText != '')
+                              Expanded(
+                                child: Btn(
+                                  text: saveButtonText!,
+                                  onPressed:
+                                      isLoading && onSave != null
+                                          ? null
+                                          : () {
+                                            onSave!();
+                                            Navigator.pop(context);
+                                          },
+                                  buttonSize: 50,
+                                  textSize: 16,
+                                  loading: isLoading,
+                                ),
                               ),
-                            ),
                           ],
                         ),
                         const SizedBox(
