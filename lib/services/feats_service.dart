@@ -1,18 +1,15 @@
 import 'package:dio/dio.dart';
+import 'app/dio_config.dart';
 import '../models/feat_model.dart';
 
 class FeatsService {
-  static const String _baseUrl = 'https://pathfinder.family/api';
   static const String _featsEndpoint = '/feats';
 
   /// Получает все черты с сервера
   static Future<List<FeatModel>> getAllFeats() async {
     try {
-      final dio = Dio();
-      final response = await dio.get(
-        '$_baseUrl$_featsEndpoint',
-        options: Options(headers: {'Content-Type': 'application/json'}),
-      );
+      final dio = DioConfig.instance;
+      final response = await dio.get(_featsEndpoint);
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = response.data;

@@ -32,8 +32,15 @@ class _WeaponsTabState extends State<WeaponsTab> {
   @override
   void didUpdateWidget(WeaponsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
+    print(
+      'WeaponsTab didUpdateWidget: old.allWeapons=${oldWidget.allWeapons.length}, new.allWeapons=${widget.allWeapons.length}',
+    );
     if (oldWidget.weapons != widget.weapons) {
       _loadSelectedWeapons();
+    }
+    if (oldWidget.allWeapons != widget.allWeapons) {
+      print('allWeapons изменились, перезагружаем...');
+      setState(() {});
     }
   }
 
@@ -50,6 +57,30 @@ class _WeaponsTabState extends State<WeaponsTab> {
 
   @override
   Widget build(BuildContext context) {
+    print('WeaponsTab build: allWeapons=${widget.allWeapons.length}');
+
+    // Показываем индикатор загрузки, если данные еще не загружены
+    if (widget.allWeapons.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Загрузка оружия...',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final groupedWeapons = WeaponsService.groupWeaponsByProficientCategory(
       _selectedWeapons,
     );

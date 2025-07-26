@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'app/dio_config.dart';
 
 class PathfinderRepository {
   final Dio _dio;
@@ -13,17 +13,9 @@ class PathfinderRepository {
   static const Duration cacheDuration = Duration(minutes: 30);
 
   PathfinderRepository({Dio? dio})
-    : _dio = dio ?? Dio(),
+    : _dio = dio ?? DioConfig.instance,
       _baseUrl =
-          dotenv.env['PATHFINDER_BASE_URL'] ?? 'https://pathfinder.family/' {
-    // Отключаем проверку сертификата только для разработки!
-    (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
-      final client = HttpClient();
-      client.badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-      return client;
-    };
-  }
+          dotenv.env['PATHFINDER_BASE_URL'] ?? 'https://pathfinder.family/';
 
   // Получение классов
   Future<List<dynamic>> fetchClasses() async {

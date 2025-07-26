@@ -46,57 +46,69 @@ class WeaponModel {
   });
 
   factory WeaponModel.fromJson(Map<String, dynamic> json) {
+    // Безопасное извлечение значений с проверкой типов
+    String? safeString(dynamic value) {
+      return value is String ? value : null;
+    }
+
+    int? safeInt(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
+    double? safeDouble(dynamic value) {
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
+    WeaponCategory? safeWeaponCategory(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return WeaponCategory.fromJson(value);
+      }
+      return null;
+    }
+
+    WeaponBook? safeWeaponBook(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return WeaponBook.fromJson(value);
+      }
+      return null;
+    }
+
+    List<WeaponModel>? safeWeaponList(dynamic value) {
+      if (value is List) {
+        return value
+            .where((e) => e is Map<String, dynamic>)
+            .map((e) => WeaponModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return null;
+    }
+
     return WeaponModel(
-      alias: json['alias'] as String?,
-      name: json['name'] as String?,
-      engName: json['engName'] as String?,
-      type: json['type'] as String?,
-      cost: json['cost'] as int?,
-      damageS: json['damageS'] as String?,
-      damageM: json['damageM'] as String?,
-      criticalRoll: json['criticalRoll'] as String?,
-      criticalDamage: json['criticalDamage'] as String?,
-      range: json['range'] as String?,
-      misfire: json['misfire'] as String?,
-      capacity: json['capacity'] as String?,
-      weight:
-          json['weight'] != null ? (json['weight'] as num).toDouble() : null,
-      special: json['special'] as String?,
-      description: json['description'] as String?,
-      proficientCategory:
-          json['proficientCategory'] != null
-              ? WeaponCategory.fromJson(
-                json['proficientCategory'] as Map<String, dynamic>,
-              )
-              : null,
-      rangeCategory:
-          json['rangeCategory'] != null
-              ? WeaponCategory.fromJson(
-                json['rangeCategory'] as Map<String, dynamic>,
-              )
-              : null,
-      encumbranceCategory:
-          json['encumbranceCategory'] != null
-              ? WeaponCategory.fromJson(
-                json['encumbranceCategory'] as Map<String, dynamic>,
-              )
-              : null,
-      parents:
-          json['parents'] != null
-              ? (json['parents'] as List)
-                  .map((e) => WeaponModel.fromJson(e as Map<String, dynamic>))
-                  .toList()
-              : null,
-      book:
-          json['book'] != null
-              ? WeaponBook.fromJson(json['book'] as Map<String, dynamic>)
-              : null,
-      childs:
-          json['childs'] != null
-              ? (json['childs'] as List)
-                  .map((e) => WeaponModel.fromJson(e as Map<String, dynamic>))
-                  .toList()
-              : null,
+      alias: safeString(json['alias']),
+      name: safeString(json['name']),
+      engName: safeString(json['engName']),
+      type: safeString(json['type']),
+      cost: safeInt(json['cost']),
+      damageS: safeString(json['damageS']),
+      damageM: safeString(json['damageM']),
+      criticalRoll: safeString(json['criticalRoll']),
+      criticalDamage: safeString(json['criticalDamage']),
+      range: safeString(json['range']),
+      misfire: safeString(json['misfire']),
+      capacity: safeString(json['capacity']),
+      weight: safeDouble(json['weight']),
+      special: safeString(json['special']),
+      description: safeString(json['description']),
+      proficientCategory: safeWeaponCategory(json['proficientCategory']),
+      rangeCategory: safeWeaponCategory(json['rangeCategory']),
+      encumbranceCategory: safeWeaponCategory(json['encumbranceCategory']),
+      parents: safeWeaponList(json['parents']),
+      book: safeWeaponBook(json['book']),
+      childs: safeWeaponList(json['childs']),
     );
   }
 
@@ -134,9 +146,13 @@ class WeaponCategory {
   WeaponCategory({this.name, this.alias});
 
   factory WeaponCategory.fromJson(Map<String, dynamic> json) {
+    String? safeString(dynamic value) {
+      return value is String ? value : null;
+    }
+
     return WeaponCategory(
-      name: json['name'] as String?,
-      alias: json['alias'] as String?,
+      name: safeString(json['name']),
+      alias: safeString(json['alias']),
     );
   }
 
@@ -154,11 +170,21 @@ class WeaponBook {
   WeaponBook({this.alias, this.name, this.order, this.abbreviation});
 
   factory WeaponBook.fromJson(Map<String, dynamic> json) {
+    String? safeString(dynamic value) {
+      return value is String ? value : null;
+    }
+
+    int? safeInt(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
     return WeaponBook(
-      alias: json['alias'] as String?,
-      name: json['name'] as String?,
-      order: json['order'] as int?,
-      abbreviation: json['abbreviation'] as String?,
+      alias: safeString(json['alias']),
+      name: safeString(json['name']),
+      order: safeInt(json['order']),
+      abbreviation: safeString(json['abbreviation']),
     );
   }
 

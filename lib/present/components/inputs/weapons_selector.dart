@@ -89,6 +89,9 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
   @override
   void initState() {
     super.initState();
+    print(
+      '_WeaponsSelectionModalState initState: allWeapons=${widget.allWeapons.length}',
+    );
     _selectedWeapons = _loadSelectedWeapons();
     _updateFilteredWeapons();
   }
@@ -106,9 +109,14 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
   }
 
   void _updateFilteredWeapons() {
+    print(
+      '_updateFilteredWeapons: selectedCategory=$_selectedCategory, searchQuery=$_searchQuery',
+    );
+
     List<WeaponModel> categoryWeapons;
     if (_selectedCategory.isEmpty) {
       categoryWeapons = widget.allWeapons;
+      print('Фильтр по категории: все оружия (${categoryWeapons.length})');
     } else {
       categoryWeapons =
           widget.allWeapons
@@ -117,10 +125,14 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
                     weapon.proficientCategory?.name == _selectedCategory,
               )
               .toList();
+      print(
+        'Фильтр по категории "$_selectedCategory": ${categoryWeapons.length} оружий',
+      );
     }
 
     if (_searchQuery.isEmpty) {
       _filteredWeapons = categoryWeapons;
+      print('Фильтр по поиску: все (${_filteredWeapons.length})');
     } else {
       _filteredWeapons =
           categoryWeapons
@@ -136,6 +148,9 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
                         false),
               )
               .toList();
+      print(
+        'Фильтр по поиску "$_searchQuery": ${_filteredWeapons.length} оружий',
+      );
     }
   }
 
@@ -159,9 +174,22 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
 
   @override
   Widget build(BuildContext context) {
+    print('WeaponsSelector build: allWeapons=${widget.allWeapons.length}');
+
     final uniqueCategories = WeaponsService.getUniqueProficientCategories(
       widget.allWeapons,
     );
+
+    // Отладочная информация
+    print('Всего оружий: ${widget.allWeapons.length}');
+    print('Уникальные категории: $uniqueCategories');
+    if (widget.allWeapons.isNotEmpty) {
+      print('Категории с деталями:');
+      for (final weapon in widget.allWeapons.take(5)) {
+        // Показываем только первые 5
+        print('  ${weapon.name}: ${weapon.proficientCategory?.name ?? "null"}');
+      }
+    }
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
@@ -234,17 +262,30 @@ class _WeaponsSelectionModalState extends State<_WeaponsSelectionModal> {
           // Фильтр по категории
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: CustomBottomSheetSelect(
-              label: 'Выберите категорию владения',
-              value: _selectedCategory,
-              items: ['', ...uniqueCategories],
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value;
-                  _updateFilteredWeapons();
-                });
-              },
-            ),
+            child:
+                widget.allWeapons.isEmpty
+                    ? Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2A2A2A),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Загрузка категорий...',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    )
+                    : CustomBottomSheetSelect(
+                      label: 'Выберите категорию владения',
+                      value: _selectedCategory,
+                      items: ['', ...uniqueCategories],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                          _updateFilteredWeapons();
+                        });
+                      },
+                    ),
           ),
 
           const SizedBox(height: 20),

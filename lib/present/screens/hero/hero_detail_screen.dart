@@ -100,7 +100,9 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
 
   Future<void> _initializeWeapons() async {
     try {
+      print('Начинаем загрузку оружия...');
       _allWeapons = await WeaponsService.getAllWeapons();
+      print('Оружие загружено: ${_allWeapons.length} штук');
       setState(() {});
     } catch (e) {
       print('Ошибка загрузки оружия: $e');
@@ -187,16 +189,27 @@ class _HeroDetailScreenState extends State<HeroDetailScreen>
                     onRemoveEquipment: _removeEquipment,
                     onEditCurrency: _editCurrency,
                   ),
-                  WeaponsTab(
-                    weapons: _currentHero.weapons,
-                    onWeaponsChanged: (weapons) {
-                      setState(() {
-                        _currentHero.weapons = weapons;
-                      });
-                      updateHeroInFirebase(_currentHero);
-                    },
-                    allWeapons: _allWeapons,
-                  ),
+                  _allWeapons.isEmpty
+                      ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : WeaponsTab(
+                        key: ValueKey(
+                          'weapons_${_allWeapons.length}',
+                        ), // Принудительное обновление при изменении данных
+                        weapons: _currentHero.weapons,
+                        onWeaponsChanged: (weapons) {
+                          setState(() {
+                            _currentHero.weapons = weapons;
+                          });
+                          updateHeroInFirebase(_currentHero);
+                        },
+                        allWeapons: _allWeapons,
+                      ),
                   FeatsTab(
                     feats: _currentHero.feats,
                     onFeatsChanged: (feats) {

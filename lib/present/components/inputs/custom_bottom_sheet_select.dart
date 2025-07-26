@@ -17,6 +17,38 @@ class CustomBottomSheetSelect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(
+      'CustomBottomSheetSelect build: label=$label, value=$value, items=$items',
+    );
+
+    // Если список элементов пустой, показываем сообщение
+    if (items.isEmpty) {
+      return Container(
+        constraints: const BoxConstraints(minHeight: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'Нет доступных категорий',
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+          ],
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: () async {
         final selected = await showModalBottomSheet<String>(
@@ -155,9 +187,35 @@ class _BottomSheetSelectContentState extends State<_BottomSheetSelectContent> {
               child:
                   filteredItems.isEmpty
                       ? Center(
-                        child: Text(
-                          'Ничего не найдено',
-                          style: TextStyle(color: Colors.white54, fontSize: 16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 48,
+                              color: Colors.white54,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              widget.items.isEmpty
+                                  ? 'Нет доступных категорий'
+                                  : 'Ничего не найдено',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (widget.items.isEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'Попробуйте обновить данные',
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       )
                       : Padding(
